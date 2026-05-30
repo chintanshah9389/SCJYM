@@ -1,7 +1,7 @@
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
 from pymongo import ASCENDING, DESCENDING, TEXT
 from core.config import get_settings
-from urllib.parse import parse_qsl, urlencode
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit, quote_plus, unquote
 
 import logging
 
@@ -40,6 +40,30 @@ def _mask_uri(uri: str) -> str:
         return "****"
 
 
+def _percent_encode_credentials(uri: str) -> str:
+    """Return a URI with the password percent-encoded (safe to retry connections)."""
+    try:
+        parts = urlsplit(uri)
+        netloc = parts.netloc
+        if "@" not in netloc:
+            return uri
+        creds, host = netloc.rsplit("@", 1)
+        if ":" not in creds:
+            return uri
+        user, password = creds.split(":", 1)
+        # Normalize by unquoting then re-quoting to avoid double-encoding
+        raw_password = unquote(password)
+        encoded_password = quote_plus(raw_password, safe="")
+        if encoded_password == password:
+            return uri
+        new_creds = f"{user}:{encoded_password}"
+        new_netloc = f"{new_creds}@{host}"
+        new_parts = parts._replace(netloc=new_netloc)
+        return urlunsplit(new_parts)
+    except Exception:
+        return uri
+
+
 def get_client() -> AsyncIOMotorClient:
     global _client
     if _client is None:
@@ -56,16 +80,48 @@ def get_db() -> AsyncIOMotorDatabase:
 
 
 async def create_indexes() -> None:
-    db = get_db()
+    logger = logging.getLogger("core.database")
 
-    # Quick connectivity/auth check to fail fast with clearer logs
-    client = get_client()
+    normalized = _normalize_mongodb_uri(settings.mongodb_uri)
+    logger.debug("Checking MongoDB connectivity (masked URI): %s", _mask_uri(normalized))
+
+    # Try initial connection
     try:
+        client = AsyncIOMotorClient(normalized)
         await client.admin.command("ping")
-        logging.getLogger("core.database").info("MongoDB ping successful")
+        logger.info("MongoDB ping successful")
+        # Ensure global client is set to this instance if not already
+        global _client
+        if _client is None:
+            _client = client
     except Exception as e:
-        logging.getLogger("core.database").exception("MongoDB ping failed: %s", e)
-        raise
+        logger.exception("MongoDB ping failed: %s", e)
+        # If it's an auth failure, try percent-encoding credentials and retry
+        msg = str(e).lower()
+        is_auth_error = ("bad auth" in msg) or ("authentication failed" in msg) or (getattr(e, "code", None) == 8000)
+        if is_auth_error:
+            try:
+                alt = _percent_encode_credentials(normalized)
+                if alt != normalized:
+                    logger.info("Retrying MongoDB connection with percent-encoded credentials (masked %s)", _mask_uri(alt))
+                    alt_client = AsyncIOMotorClient(alt)
+                    await alt_client.admin.command("ping")
+                    logger.info("MongoDB ping successful with percent-encoded credentials")
+                    # swap global client
+                    global _client
+                    if _client:
+                        _client.close()
+                    _client = alt_client
+                else:
+                    logger.info("No credential encoding changes detected; aborting retry")
+                    raise
+            except Exception as e2:
+                logger.exception("Retry with encoded credentials failed: %s", e2)
+                raise
+        else:
+            raise
+
+    db = get_db()
 
     # Users
     await db.users.create_index([("email", ASCENDING)], unique=True)
