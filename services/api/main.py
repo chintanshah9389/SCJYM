@@ -15,7 +15,12 @@ settings = get_settings()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    await create_indexes()
+    import logging
+    try:
+        await create_indexes()
+        logging.info("MongoDB indexes created successfully.")
+    except Exception as e:
+        logging.warning("Could not create indexes (DB may be unavailable): %s", e)
     db = get_db()
     start_scheduler(db)
     yield
