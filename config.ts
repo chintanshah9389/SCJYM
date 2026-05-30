@@ -14,7 +14,7 @@
  */
 
 // ─── TOGGLE: flip this to switch between local and production ─────────────────
-export const USE_PROD = false;
+export const USE_PROD = true;
 
 // ─── API Endpoints ────────────────────────────────────────────────────────────
 export const API = {
