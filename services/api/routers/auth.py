@@ -73,9 +73,21 @@ async def _store_refresh_token(db, user_id: str, token: str) -> None:
 
 @router.post("/register", status_code=status.HTTP_201_CREATED)
 async def register(body: RegisterIn, db: AsyncIOMotorDatabase = Depends(get_db)):
-    existing = await db.users.find_one(
-        {"$or": [{"email": body.email}, {"mobile": body.mobile}]}
-    )
+    import logging
+    logging.basicConfig(level=logging.DEBUG)
+    logger = logging.getLogger("auth.register")
+    try:
+        existing = await db.users.find_one(
+            {"$or": [{"email": body.email}, {"mobile": body.mobile}]}
+        )
+        logger.info("DB lookup for register OK, existing user: %s", existing is not None)
+    except Exception as e:
+        logger.exception("DB find_one failed during register: %s", e)
+        raise HTTPException(
+            status_code=500,
+            detail=err("DB_ERROR", f"Database error: {type(e).__name__}: {str(e)}"),
+        )
+
     if existing:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -95,8 +107,15 @@ async def register(body: RegisterIn, db: AsyncIOMotorDatabase = Depends(get_db))
         "createdAt": now,
         "updatedAt": now,
     }
-    result = await db.users.insert_one(doc)
-    doc["_id"] = result.inserted_id
+    try:
+        result = await db.users.insert_one(doc)
+        doc["_id"] = result.inserted_id
+    except Exception as e:
+        logger.exception("DB insert_one failed during register: %s", e)
+        raise HTTPException(
+            status_code=500,
+            detail=err("DB_ERROR", f"Database error: {type(e).__name__}: {str(e)}"),
+        )
     return ok(
         {
             "message": "Registration successful. Awaiting admin approval.",
