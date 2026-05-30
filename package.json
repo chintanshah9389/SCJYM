@@ -1,0 +1,39 @@
+{
+  "name": "scjygm",
+  "version": "1.0.0",
+  "private": true,
+  "description": "SCJYGM monorepo – Social Community, Products, Approvals, Ratings, Best Sellers",
+  "workspaces": [
+    "apps/mobile",
+    "apps/admin",
+    "packages/shared"
+  ],
+  "scripts": {
+    "mobile": "yarn workspace @scjygm/mobile start",
+    "admin": "yarn workspace @scjygm/admin dev",
+    "api": "cd services/api && uvicorn main:app --reload --host 0.0.0.0 --port 8000",
+    "api:seed": "cd services/api && python -m scripts.seed_super_admin",
+    "infra:up": "docker compose -f infra/docker-compose.yml up -d",
+    "infra:down": "docker compose -f infra/docker-compose.yml down",
+    "shared:build": "yarn workspace @scjygm/shared build",
+    "postinstall": "node scripts/patch-expo-router-ctx.cjs"
+  },
+  "overrides": {
+    "react": "19.1.0",
+    "react-dom": "19.1.0"
+  },
+  "resolutions": {
+    "react": "19.1.0",
+    "react-dom": "19.1.0"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "yarn": ">=1.22.0"
+  },
+  "dependencies": {
+    "@expo/vector-icons": "^15.1.1",
+    "babel-preset-expo": "^54.0.0",
+    "react": "19.1.0",
+    "react-dom": "19.1.0"
+  }
+}

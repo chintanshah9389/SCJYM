@@ -1,0 +1,47 @@
+# ── Python ────────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+dist/
+*.egg-info/
+.eggs/
+*.pytest_cache/
+.mypy_cache/
+
+# ── Node / JS ─────────────────────────────────────────────────────────────────
+node_modules/
+.yarn/cache
+.yarn/unplugged
+.pnp.*
+dist/
+.next/
+out/
+build/
+.expo/
+.expo-shared/
+
+# ── Env / secrets ─────────────────────────────────────────────────────────────
+.env
+.env.local
+.env.*.local
+google-services.json
+GoogleService-Info.plist
+
+# ── Editor / OS ───────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/settings.json
+*.swp
+*.swo
+
+# ── Logs ──────────────────────────────────────────────────────────────────────
+*.log
+logs/
+
+# ── Coverage ──────────────────────────────────────────────────────────────────
+coverage/
+.coverage
+htmlcov/
