@@ -1,16 +1,29 @@
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
 from pymongo import ASCENDING, DESCENDING, TEXT
 from core.config import get_settings
+from urllib.parse import parse_qsl, urlencode
 
 settings = get_settings()
 
 _client: AsyncIOMotorClient | None = None
 
 
+def _normalize_mongodb_uri(uri: str) -> str:
+    cleaned = uri.strip().strip('"').strip("'")
+    if cleaned.startswith("mongodb+srv://") and "?" in cleaned:
+        base, query = cleaned.split("?", 1)
+        params = dict(parse_qsl(query, keep_blank_values=True))
+        params.setdefault("authSource", "admin")
+        return f"{base}?{urlencode(params)}"
+    if cleaned.startswith("mongodb+srv://") and "?" not in cleaned:
+        return f"{cleaned}?authSource=admin"
+    return cleaned
+
+
 def get_client() -> AsyncIOMotorClient:
     global _client
     if _client is None:
-        _client = AsyncIOMotorClient(settings.mongodb_uri)
+        _client = AsyncIOMotorClient(_normalize_mongodb_uri(settings.mongodb_uri))
     return _client
 
 
