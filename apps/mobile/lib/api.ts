@@ -4,6 +4,8 @@ import Constants from "expo-constants";
 import { toastEmitter } from "./toastEmitter";
 
 function getApiBase(): string {
+  const useProd = process.env.EXPO_PUBLIC_USE_PROD === "true";
+  if (useProd) return "https://scjym-api.onrender.com/api/v1";
   // In a native dev build (Expo Go / dev client), derive host from the Metro bundler address
   // so it works on physical devices and emulators without hardcoding an IP.
   if (__DEV__ && Platform.OS !== "web") {

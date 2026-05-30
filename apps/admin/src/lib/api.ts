@@ -2,7 +2,9 @@ import axios from "axios";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/options";
 
-const API = process.env.API_BASE_URL ?? "http://localhost:8000/api/v1";
+const API = process.env.USE_PROD === "true"
+  ? "https://scjym-api.onrender.com/api/v1"
+  : (process.env.API_BASE_URL ?? "http://localhost:8000/api/v1");
 
 export function createApiClient(accessToken?: string) {
   return axios.create({
