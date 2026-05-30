@@ -107,7 +107,18 @@ async def register(body: RegisterIn, db: AsyncIOMotorDatabase = Depends(get_db))
 
 @router.post("/login")
 async def login(body: LoginIn, db: AsyncIOMotorDatabase = Depends(get_db)):
-    user = await db.users.find_one({"email": body.email.lower()})
+    import logging
+    logging.basicConfig(level=logging.DEBUG)
+    logger = logging.getLogger("auth.login")
+    try:
+        user = await db.users.find_one({"email": body.email.lower()})
+        logger.info("DB lookup OK, user found: %s", user is not None)
+    except Exception as e:
+        logger.exception("DB find_one failed: %s", e)
+        raise HTTPException(
+            status_code=500,
+            detail=err("DB_ERROR", f"Database error: {type(e).__name__}: {str(e)}")
+        )
 
     # Development fallback: recover SUPER_ADMIN account if DB password drifted.
     if (
