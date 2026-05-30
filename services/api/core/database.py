@@ -3,6 +3,8 @@ from pymongo import ASCENDING, DESCENDING, TEXT
 from core.config import get_settings
 from urllib.parse import parse_qsl, urlencode
 
+import logging
+
 settings = get_settings()
 
 _client: AsyncIOMotorClient | None = None
@@ -20,10 +22,32 @@ def _normalize_mongodb_uri(uri: str) -> str:
     return cleaned
 
 
+def _mask_uri(uri: str) -> str:
+    """Return a masked version of the URI for safe logging (hide password)."""
+    try:
+        cleaned = uri.strip().strip('"').strip("'")
+        if "@" in cleaned and "://" in cleaned:
+            prefix, rest = cleaned.split("://", 1)
+            creds, after = rest.split("@", 1)
+            if ":" in creds:
+                user, _pwd = creds.split(":", 1)
+                masked = f"{user}:****"
+            else:
+                masked = "****"
+            return f"{prefix}://{masked}@{after}"
+        return cleaned
+    except Exception:
+        return "****"
+
+
 def get_client() -> AsyncIOMotorClient:
     global _client
     if _client is None:
-        _client = AsyncIOMotorClient(_normalize_mongodb_uri(settings.mongodb_uri))
+        normalized = _normalize_mongodb_uri(settings.mongodb_uri)
+        logging.getLogger("core.database").debug(
+            "Connecting to MongoDB (masked URI): %s", _mask_uri(normalized)
+        )
+        _client = AsyncIOMotorClient(normalized)
     return _client
 
 
@@ -33,6 +57,15 @@ def get_db() -> AsyncIOMotorDatabase:
 
 async def create_indexes() -> None:
     db = get_db()
+
+    # Quick connectivity/auth check to fail fast with clearer logs
+    client = get_client()
+    try:
+        await client.admin.command("ping")
+        logging.getLogger("core.database").info("MongoDB ping successful")
+    except Exception as e:
+        logging.getLogger("core.database").exception("MongoDB ping failed: %s", e)
+        raise
 
     # Users
     await db.users.create_index([("email", ASCENDING)], unique=True)
