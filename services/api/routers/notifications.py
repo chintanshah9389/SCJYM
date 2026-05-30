@@ -39,13 +39,54 @@ async def send_fcm_push(
     image_url: str | None = None,
     data: dict | None = None,
 ) -> None:
-    """Send FCM push to a list of device tokens via Legacy HTTP API."""
-    if not settings.fcm_server_key or settings.app_env == "development":
-        logger.info("DEV FCM to %d tokens: title=%s body=%s", len(tokens), title, body)
+    """Send push notifications.
+
+    Supports both Expo push tokens (ExponentPushToken[...]) and regular FCM tokens.
+    """
+    if not tokens:
+        return
+
+    expo_tokens = [t for t in tokens if isinstance(t, str) and t.startswith("ExponentPushToken[")]
+    fcm_tokens = [t for t in tokens if t not in expo_tokens]
+
+    if settings.app_env == "development":
+        logger.info("DEV push to %d tokens: title=%s body=%s", len(tokens), title, body)
+        return
+
+    if expo_tokens:
+        expo_messages = [
+            {
+                "to": token,
+                "title": title,
+                "body": body,
+                "data": data or {},
+                "sound": "default",
+                **({"image": image_url} if image_url else {}),
+            }
+            for token in expo_tokens
+        ]
+        try:
+            async with httpx.AsyncClient() as client:
+                resp = await client.post(
+                    "https://exp.host/--/api/v2/push/send",
+                    json=expo_messages,
+                    headers={"Content-Type": "application/json"},
+                    timeout=15,
+                )
+                if resp.status_code != 200:
+                    logger.error("Expo push returned %s: %s", resp.status_code, resp.text)
+        except Exception:
+            logger.exception("Expo push send failed")
+
+    if not fcm_tokens:
+        return
+
+    if not settings.fcm_server_key:
+        logger.warning("FCM_SERVER_KEY is missing. Skipping %d FCM token(s).", len(fcm_tokens))
         return
 
     payload: dict = {
-        "registration_ids": tokens,
+        "registration_ids": fcm_tokens,
         "notification": {"title": title, "body": body},
         "data": data or {},
     }
