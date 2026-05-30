@@ -11,6 +11,7 @@ from core.scheduler import start_scheduler, stop_scheduler
 from routers import auth, users, products, cart, ratings_comments, menu, notifications, ranking, ads
 
 settings = get_settings()
+cors_origins = [origin.strip() for origin in settings.cors_origins.split(",") if origin.strip()]
 
 
 @asynccontextmanager
@@ -38,7 +39,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],   # tighten in production
+    allow_origins=cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

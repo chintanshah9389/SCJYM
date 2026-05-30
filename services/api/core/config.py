@@ -38,6 +38,7 @@ class Settings(BaseSettings):
     log_level: str = "debug"
     api_base_url: str = "http://localhost:8000/api/v1"
     mobile_deep_link_scheme: str = "scjygm"
+    cors_origins: str = "http://localhost:8081,http://127.0.0.1:8081,http://localhost:3000,http://127.0.0.1:3000"
 
     class Config:
         env_file = ".env"
