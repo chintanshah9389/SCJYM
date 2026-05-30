@@ -80,6 +80,7 @@ def get_db() -> AsyncIOMotorDatabase:
 
 
 async def create_indexes() -> None:
+    global _client
     logger = logging.getLogger("core.database")
 
     normalized = _normalize_mongodb_uri(settings.mongodb_uri)
@@ -91,7 +92,6 @@ async def create_indexes() -> None:
         await client.admin.command("ping")
         logger.info("MongoDB ping successful")
         # Ensure global client is set to this instance if not already
-        global _client
         if _client is None:
             _client = client
     except Exception as e:
@@ -108,7 +108,6 @@ async def create_indexes() -> None:
                     await alt_client.admin.command("ping")
                     logger.info("MongoDB ping successful with percent-encoded credentials")
                     # swap global client
-                    global _client
                     if _client:
                         _client.close()
                     _client = alt_client
