@@ -140,9 +140,10 @@ async def health():
 @app.get("/health/db")
 async def health_db():
     """Check database connectivity."""
+    from core.database import get_client
     try:
-        db = get_db()
-        await db.admin.command("ping")
+        client = get_client()
+        await client.admin.command("ping")
         return {"status": "ok", "database": "connected"}
     except Exception as e:
         return {"status": "error", "database": "disconnected", "error": str(e)}
