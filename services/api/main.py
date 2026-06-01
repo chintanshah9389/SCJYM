@@ -17,16 +17,35 @@ cors_origins = [origin.strip() for origin in settings.cors_origins.split(",") if
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     import logging
+    import sys
+    logging.basicConfig(level=logging.DEBUG, stream=sys.stdout)
+    logger = logging.getLogger("main")
+    
     try:
+        logger.info("Starting up: Creating MongoDB indexes...")
         await create_indexes()
-        logging.info("MongoDB indexes created successfully.")
+        logger.info("MongoDB indexes created successfully.")
     except Exception as e:
-        logging.warning("Could not create indexes (DB may be unavailable): %s", e)
-    db = get_db()
-    start_scheduler(db)
+        logger.error("FATAL: Could not create indexes - %s", e, exc_info=True)
+        raise
+    
+    try:
+        db = get_db()
+        logger.info("Starting scheduler...")
+        start_scheduler(db)
+        logger.info("Scheduler started successfully")
+    except Exception as e:
+        logger.error("FATAL: Could not start scheduler - %s", e, exc_info=True)
+        raise
+    
     yield
-    stop_scheduler()
-    await close_connection()
+    
+    try:
+        stop_scheduler()
+        await close_connection()
+        logger.info("Shutdown completed")
+    except Exception as e:
+        logger.error("Error during shutdown: %s", e)
 
 
 app = FastAPI(
@@ -50,20 +69,34 @@ app.add_middleware(
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
     import logging
-    logging.exception("Unhandled error: %s", exc)
+    import traceback
+    logger = logging.getLogger("error_handler")
+    logger.exception("Unhandled error in %s %s: %s", request.method, request.url.path, exc)
+    
     origin = request.headers.get("origin")
     headers = {}
     if origin and origin in cors_origins:
         headers["Access-Control-Allow-Origin"] = origin
         headers["Access-Control-Allow-Credentials"] = "true"
         headers["Vary"] = "Origin"
+    
+    # Include error details in development mode
+    error_msg = "An unexpected error occurred."
+    error_detail = None
+    if settings.app_env != "production":
+        error_detail = f"{type(exc).__name__}: {str(exc)}"
+    
     return JSONResponse(
         status_code=500,
         headers=headers,
         content={
             "success": False,
             "data": None,
-            "error": {"code": "INTERNAL_ERROR", "message": "An unexpected error occurred."},
+            "error": {
+                "code": "INTERNAL_ERROR", 
+                "message": error_msg,
+                "detail": error_detail,
+            },
         },
     )
 
@@ -102,3 +135,14 @@ app.include_router(ads.admin_router, prefix=PREFIX)
 @app.get("/health")
 async def health():
     return {"status": "ok", "version": "1.0.0"}
+
+
+@app.get("/health/db")
+async def health_db():
+    """Check database connectivity."""
+    try:
+        db = get_db()
+        await db.admin.command("ping")
+        return {"status": "ok", "database": "connected"}
+    except Exception as e:
+        return {"status": "error", "database": "disconnected", "error": str(e)}
