@@ -2,6 +2,7 @@
 from datetime import datetime, timedelta, timezone
 from bson import ObjectId
 import secrets
+from pymongo.errors import DuplicateKeyError
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from motor.motor_asyncio import AsyncIOMotorDatabase
@@ -95,12 +96,21 @@ async def register(body: RegisterIn, db: AsyncIOMotorDatabase = Depends(get_db))
         )
 
     now = datetime.now(tz=timezone.utc)
+    try:
+        password_hash = hash_password(body.password)
+    except Exception as e:
+        logger.exception("Password hashing failed during register: %s", e)
+        raise HTTPException(
+            status_code=500,
+            detail=err("PASSWORD_HASH_ERROR", "Could not process password"),
+        )
+
     doc = {
         "fullName": body.fullName,
         "email": body.email.lower(),
         "mobile": body.mobile,
         "address": body.address.model_dump(),
-        "passwordHash": hash_password(body.password),
+        "passwordHash": password_hash,
         "role": "MEMBER",
         "status": "PENDING_APPROVAL",
         "fcmToken": None,
@@ -110,6 +120,11 @@ async def register(body: RegisterIn, db: AsyncIOMotorDatabase = Depends(get_db))
     try:
         result = await db.users.insert_one(doc)
         doc["_id"] = result.inserted_id
+    except DuplicateKeyError:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=err("CONFLICT", "Email or mobile already registered"),
+        )
     except Exception as e:
         logger.exception("DB insert_one failed during register: %s", e)
         raise HTTPException(
