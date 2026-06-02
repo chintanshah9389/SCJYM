@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
 import { createApiClient } from "@/lib/api";
+import toast from "react-hot-toast";
 
 export default function MembersPage() {
   const { data: session } = useSession();
@@ -42,14 +43,22 @@ export default function MembersPage() {
   const [memberLoading, setMemberLoading] = useState(false);
 
   async function handleExport(fmt: "csv" | "xlsx") {
-    const token = (session as any)?.accessToken;
-    const url = `${process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000/api/v1"}/users/export?fmt=${fmt}${q ? `&q=${q}` : ""}`;
-    const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
-    const blob = await res.blob();
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = `members.${fmt}`;
-    a.click();
+    try {
+      const token = (session as any)?.accessToken;
+      const url = `${process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000/api/v1"}/users/export?fmt=${fmt}${q ? `&q=${q}` : ""}`;
+      const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+      if (!res.ok) {
+        throw new Error(`Export failed (${res.status})`);
+      }
+      const blob = await res.blob();
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = `members.${fmt}`;
+      a.click();
+      toast.success(`Members exported as ${fmt.toUpperCase()}`);
+    } catch (err: any) {
+      toast.error(err?.message ?? "Failed to export members");
+    }
   }
 
   function openCreateModal() {
@@ -99,16 +108,16 @@ export default function MembersPage() {
       if (memberMode === "create") {
         const res = await api.post("/users", memberForm);
         const pw = res?.data?.data?.password;
-        alert(`User created. Password: ${pw ?? "(not returned)"}`);
+        toast.success(`User created. Password: ${pw ?? "(not returned)"}`);
       } else if (memberMode === "edit" && selectedMember) {
         await api.patch(`/users/${selectedMember.id}`, memberForm);
-        alert("User updated.");
+        toast.success("User updated.");
       }
       closeMemberModal();
       queryClient.invalidateQueries({ queryKey: ["members-admin"] });
     } catch (err: any) {
       const msg = err?.response?.data?.detail?.message ?? err?.message ?? "Failed to save user";
-      alert(msg);
+      toast.error(msg);
     } finally {
       setMemberLoading(false);
     }
@@ -118,11 +127,11 @@ export default function MembersPage() {
     if (!confirm(`Delete user ${m.fullName} (${m.email})? This cannot be undone.`)) return;
     try {
       await api.delete(`/users/${m.id}`);
-      alert("User deleted.");
+      toast.success("User deleted.");
       queryClient.invalidateQueries({ queryKey: ["members-admin"] });
     } catch (err: any) {
       const msg = err?.response?.data?.detail?.message ?? err?.message ?? "Failed to delete user";
-      alert(msg);
+      toast.error(msg);
     }
   }
 
@@ -143,11 +152,11 @@ export default function MembersPage() {
     setPwdLoading(true);
     try {
       await api.patch(`/users/${selectedMember.id}/password`, { newPassword });
-      alert("Password updated successfully.");
+      toast.success("Password updated successfully.");
       closePwdModal();
     } catch (err: any) {
       const msg = err?.response?.data?.detail?.message ?? err?.message ?? "Failed to update password";
-      alert(msg);
+      toast.error(msg);
     } finally {
       setPwdLoading(false);
     }

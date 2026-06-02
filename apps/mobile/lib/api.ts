@@ -43,6 +43,16 @@ export const api = axios.create({
   headers: { "Content-Type": "application/json" },
 });
 
+function getApiMessage(payload: any): string | null {
+  const msg =
+    payload?.data?.message ??
+    payload?.message ??
+    payload?.error?.message ??
+    payload?.detail?.message ??
+    payload?.detail;
+  return typeof msg === "string" && msg.trim().length > 0 ? msg : null;
+}
+
 // ── Request interceptor: attach access token ──────────────────────────────
 api.interceptors.request.use(async (config) => {
   const token = await getToken("accessToken");
@@ -54,7 +64,18 @@ api.interceptors.request.use(async (config) => {
 
 // ── Response interceptor: transparent token refresh ───────────────────────
 api.interceptors.response.use(
-  (res) => res,
+  (res) => {
+    const method = (res.config?.method ?? "get").toLowerCase();
+    const shouldToast = ["post", "put", "patch", "delete"].includes(method);
+    const suppressToast = res.config?.headers?.["x-no-toast"] === "1";
+
+    if (shouldToast && !suppressToast) {
+      const msg = getApiMessage(res.data) ?? "Request completed successfully";
+      toastEmitter.emit(msg, "success");
+    }
+
+    return res;
+  },
   async (error) => {
     const original = error.config;
     if (error.response?.status === 401 && !original._retry) {
@@ -75,11 +96,7 @@ api.interceptors.response.use(
 
     // Show error toast for all non-401 errors (401 handled above via refresh)
     if (error.response?.status !== 401) {
-      const msg: string =
-        error.response?.data?.error?.message ??
-        error.response?.data?.detail ??
-        error.message ??
-        "Request failed";
+      const msg = getApiMessage(error.response?.data) ?? error.message ?? "Request failed";
       toastEmitter.emit(typeof msg === "string" ? msg : JSON.stringify(msg), "error");
     }
 

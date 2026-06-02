@@ -14,6 +14,8 @@ export default function EditMemberPage() {
   const [form, setForm] = useState<any>(null);
   const [showRoleMenu, setShowRoleMenu] = useState(false);
   const [showStatusMenu, setShowStatusMenu] = useState(false);
+  const [password, setPassword] = useState<string>("");
+  const [showPassword, setShowPassword] = useState(false);
 
   const ROLES = ["MEMBER", "ADMIN", "SUPER_ADMIN"];
   const STATUSES = ["PENDING_APPROVAL", "APPROVED", "REJECTED", "SUSPENDED"];
@@ -42,6 +44,9 @@ export default function EditMemberPage() {
     setLoading(true);
     try {
       await api.patch(`/users/${id}`, form);
+      if (password && password.trim().length > 0) {
+        await api.patch(`/users/${id}/password`, { newPassword: password.trim() });
+      }
       queryClient.invalidateQueries({ predicate: (q) => Array.isArray(q.queryKey) && q.queryKey[0] === "members" });
       router.back();
     } catch (err: any) {
@@ -94,6 +99,18 @@ export default function EditMemberPage() {
             ))}
           </View>
         )}
+
+        <Text style={styles.label}>Password</Text>
+        <TextInput
+          style={styles.input}
+          value={password}
+          onChangeText={setPassword}
+          placeholder="Leave blank to keep current password"
+          secureTextEntry={!showPassword}
+        />
+        <TouchableOpacity onPress={() => setShowPassword((s) => !s)} style={{ alignSelf: "flex-end", marginBottom: 6 }}>
+          <Text style={{ color: "#1a56db", fontWeight: "600" }}>{showPassword ? "Hide" : "Show"}</Text>
+        </TouchableOpacity>
 
         <View style={{ flexDirection: "row", justifyContent: "flex-end", marginTop: 20 }}>
           <TouchableOpacity onPress={() => router.back()} style={{ padding: 10, marginRight: 12 }}>

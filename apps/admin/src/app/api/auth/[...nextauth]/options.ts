@@ -21,6 +21,9 @@ export const authOptions = {
           if (user.role !== "ADMIN" && user.role !== "SUPER_ADMIN") {
             throw new Error("ADMIN_ONLY");
           }
+          if (user.status !== "APPROVED") {
+            throw new Error("APPROVAL_PENDING");
+          }
           return { ...user, accessToken, refreshToken };
         } catch (err: any) {
           const msg =

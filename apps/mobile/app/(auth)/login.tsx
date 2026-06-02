@@ -5,7 +5,6 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  Alert,
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
@@ -14,9 +13,11 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useAuth } from "../../context/AuthContext";
+import { useToast } from "../../context/ToastContext";
 
 export default function LoginScreen() {
   const { login } = useAuth();
+  const { showToast } = useToast();
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -25,19 +26,21 @@ export default function LoginScreen() {
 
   async function handleLogin() {
     if (!email || !password) {
-      Alert.alert("Error", "Please enter email and password.");
+      showToast("Please enter email and password.", "warning");
       return;
     }
     setLoading(true);
     try {
       await login(email.trim(), password);
+      showToast("Login successful", "success");
       router.replace("/(tabs)");
     } catch (err: any) {
+      if (err?.message === "APPROVAL_PENDING") return;
       const msg =
         err?.response?.data?.error?.message ??
         err?.response?.data?.detail?.message ??
         "Login failed. Please check your email and password.";
-      Alert.alert("Login Failed", msg);
+      showToast(msg, "error");
     } finally {
       setLoading(false);
     }

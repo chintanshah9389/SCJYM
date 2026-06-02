@@ -21,7 +21,13 @@ export default function LoginPage() {
     });
     setLoading(false);
     if (result?.error) {
-      setError(result.error === "ADMIN_ONLY" ? "Admin access only." : result.error);
+      setError(
+        result.error === "ADMIN_ONLY"
+          ? "Admin access only."
+          : result.error === "APPROVAL_PENDING"
+            ? "Approval is pending. Please contact admin."
+            : result.error
+      );
     } else {
       router.push("/dashboard");
     }

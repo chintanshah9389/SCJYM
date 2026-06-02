@@ -4,7 +4,8 @@ import { View, Text, StyleSheet, Animated, Platform } from "react-native";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider, useAuth } from "../context/AuthContext";
 import { ToastProvider } from "../context/ToastContext";
-import { useRouter } from "expo-router";
+import { useRouter, useSegments } from "expo-router";
+import { toastEmitter } from "../lib/toastEmitter";
 
 const queryClient = new QueryClient();
 
@@ -21,10 +22,33 @@ function RootLayout() {
 }
 
 function RootNavigator() {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, logout } = useAuth();
   const router = useRouter();
+  const segments = useSegments();
   const notificationListener = useRef<any>(null);
   const responseListener = useRef<any>(null);
+
+  useEffect(() => {
+    if (isLoading) return;
+
+    const inAuthGroup = segments[0] === "(auth)";
+
+    if (!user) {
+      if (!inAuthGroup) router.replace("/(auth)/login");
+      return;
+    }
+
+    if (user.status !== "APPROVED") {
+      toastEmitter.emit("Approval is pending. Please wait for admin approval.", "warning");
+      void logout();
+      if (!inAuthGroup) router.replace("/(auth)/login");
+      return;
+    }
+
+    if (inAuthGroup) {
+      router.replace("/(tabs)");
+    }
+  }, [isLoading, user, segments, logout, router]);
 
   // Deep-link from notification taps (native only)
   useEffect(() => {
