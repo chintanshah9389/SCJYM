@@ -23,6 +23,8 @@ export default function EditMemberPage() {
   useEffect(() => {
     if (!id) return;
     let mounted = true;
+    setPassword("");
+    setShowPassword(false);
     (async () => {
       try {
         const res = await api.get(`/users/${id}`);
@@ -105,9 +107,15 @@ export default function EditMemberPage() {
           style={styles.input}
           value={password}
           onChangeText={setPassword}
-          placeholder="Leave blank to keep current password"
+          placeholder="Enter new password for this member"
           secureTextEntry={!showPassword}
+          autoCapitalize="none"
+          autoCorrect={false}
+          autoComplete="off"
+          textContentType="none"
+          importantForAutofill="no"
         />
+        <Text style={styles.hint}>Current password cannot be viewed. Enter a new password only if you want to change it.</Text>
         <TouchableOpacity onPress={() => setShowPassword((s) => !s)} style={{ alignSelf: "flex-end", marginBottom: 6 }}>
           <Text style={{ color: "#1a56db", fontWeight: "600" }}>{showPassword ? "Hide" : "Show"}</Text>
         </TouchableOpacity>
@@ -130,6 +138,7 @@ const styles = StyleSheet.create({
   title: { fontSize: 20, fontWeight: "700", marginBottom: 12 },
   label: { color: "#374151", marginTop: 8, marginBottom: 6, fontWeight: "600" },
   input: { backgroundColor: "#fff", borderWidth: 1, borderColor: "#e5e7eb", padding: 10, borderRadius: 8, marginBottom: 6 },
+  hint: { color: "#6b7280", fontSize: 12, marginBottom: 8 },
   dropdownContainerInline: { backgroundColor: "#fff", borderWidth: 1, borderColor: "#e5e7eb", borderRadius: 6, marginHorizontal: 12, marginBottom: 8, overflow: "hidden" },
   dropdownItemInline: { padding: 10, borderBottomWidth: 1, borderBottomColor: "#f3f4f6" },
   dropdownSelected: { color: "#1a56db", fontWeight: "700" },
