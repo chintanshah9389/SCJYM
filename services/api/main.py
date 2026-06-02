@@ -21,22 +21,23 @@ async def lifespan(app: FastAPI):
     logging.basicConfig(level=logging.DEBUG, stream=sys.stdout)
     logger = logging.getLogger("main")
     
+    # Try to create indexes, but don't fail startup if DB is unavailable
     try:
         logger.info("Starting up: Creating MongoDB indexes...")
         await create_indexes()
         logger.info("MongoDB indexes created successfully.")
     except Exception as e:
-        logger.error("FATAL: Could not create indexes - %s", e, exc_info=True)
-        raise
+        logger.error("WARNING: Could not create indexes (DB may be unavailable): %s", e, exc_info=True)
+        logger.error("Application will continue but database operations will fail until MongoDB is accessible")
     
+    # Try to start scheduler, but don't fail startup if DB is unavailable
     try:
         db = get_db()
         logger.info("Starting scheduler...")
         start_scheduler(db)
         logger.info("Scheduler started successfully")
     except Exception as e:
-        logger.error("FATAL: Could not start scheduler - %s", e, exc_info=True)
-        raise
+        logger.error("WARNING: Could not start scheduler (DB may be unavailable): %s", e, exc_info=True)
     
     yield
     
