@@ -145,7 +145,7 @@ async def list_users(
     flt = _build_search_filter(q, city, state, pincode, role, user_status)
     skip = (page - 1) * limit
     total = await db.users.count_documents(flt)
-    cursor = db.users.find(flt, {"passwordHash": 0}).sort(sort_by, sort_dir).skip(skip).limit(limit)
+    cursor = db.users.find(flt, {"passwordHash": 0, "passwordPlain": 0}).sort(sort_by, sort_dir).skip(skip).limit(limit)
     docs = await cursor.to_list(length=limit)
     return ok(paginate_response(serialize_list(docs), page, limit, total))
 
@@ -163,7 +163,7 @@ async def export_users(
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
     flt = _build_search_filter(q, city, state, pincode, role, user_status)
-    cursor = db.users.find(flt, {"passwordHash": 0}).sort("createdAt", -1)
+    cursor = db.users.find(flt, {"passwordHash": 0, "passwordPlain": 0}).sort("createdAt", -1)
     docs = serialize_list(await cursor.to_list(length=10000))
 
     headers = ["ID", "Full Name", "Email", "Mobile", "City", "State", "Pincode", "Role", "Status", "Created At"]
@@ -204,10 +204,15 @@ async def get_user(
     _admin: dict = Depends(require_admin),
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
-    user = await db.users.find_one({"_id": ObjectId(user_id)}, {"passwordHash": 0})
+    user = await db.users.find_one({"_id": ObjectId(user_id)})
     if not user:
         raise HTTPException(status_code=404, detail=err("NOT_FOUND", "User not found"))
-    return ok(serialize_doc(user))
+    payload = serialize_doc(user)
+    payload["hasPassword"] = bool(user.get("passwordHash"))
+    payload["password"] = user.get("passwordPlain") or ""
+    payload.pop("passwordHash", None)
+    payload.pop("passwordPlain", None)
+    return ok(payload)
 
 
 @router.patch("/{user_id}/approval")
@@ -251,7 +256,7 @@ async def admin_update_password(
     now = datetime.now(tz=timezone.utc)
     result = await db.users.update_one(
         {"_id": ObjectId(user_id)},
-        {"$set": {"passwordHash": hash_password(body.newPassword), "updatedAt": now}},
+        {"$set": {"passwordHash": hash_password(body.newPassword), "passwordPlain": body.newPassword, "updatedAt": now}},
     )
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail=err("NOT_FOUND", "User not found"))
@@ -282,6 +287,7 @@ async def admin_create_user(
         "mobile": body.mobile,
         "address": body.address.model_dump(),
         "passwordHash": pw_hash,
+        "passwordPlain": plain_pw,
         "role": body.role,
         "status": body.status,
         "fcmToken": None,

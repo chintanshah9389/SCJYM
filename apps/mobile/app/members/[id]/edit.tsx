@@ -15,7 +15,8 @@ export default function EditMemberPage() {
   const [showRoleMenu, setShowRoleMenu] = useState(false);
   const [showStatusMenu, setShowStatusMenu] = useState(false);
   const [password, setPassword] = useState<string>("");
-  const [showPassword, setShowPassword] = useState(false);
+  const [showPassword, setShowPassword] = useState(true);
+  const [initialPassword, setInitialPassword] = useState<string>("");
 
   const ROLES = ["MEMBER", "ADMIN", "SUPER_ADMIN"];
   const STATUSES = ["PENDING_APPROVAL", "APPROVED", "REJECTED", "SUSPENDED"];
@@ -23,12 +24,16 @@ export default function EditMemberPage() {
   useEffect(() => {
     if (!id) return;
     let mounted = true;
-    setPassword("");
-    setShowPassword(false);
+    setShowPassword(true);
     (async () => {
       try {
         const res = await api.get(`/users/${id}`);
-        if (mounted) setForm(res.data.data);
+        if (!mounted) return;
+        const user = res?.data?.data ?? {};
+        setForm(user);
+        const dbPassword = String(user?.password ?? "");
+        setPassword(dbPassword);
+        setInitialPassword(dbPassword);
       } catch (err: any) {
         Alert.alert("Error", "Failed to fetch user");
       }
@@ -46,8 +51,10 @@ export default function EditMemberPage() {
     setLoading(true);
     try {
       await api.patch(`/users/${id}`, form);
-      if (password && password.trim().length > 0) {
-        await api.patch(`/users/${id}/password`, { newPassword: password.trim() });
+      const nextPassword = password.trim();
+      if (nextPassword.length > 0 && nextPassword !== initialPassword) {
+        await api.patch(`/users/${id}/password`, { newPassword: nextPassword });
+        setInitialPassword(nextPassword);
       }
       queryClient.invalidateQueries({ predicate: (q) => Array.isArray(q.queryKey) && q.queryKey[0] === "members" });
       router.back();
@@ -102,7 +109,7 @@ export default function EditMemberPage() {
           </View>
         )}
 
-        <Text style={styles.label}>Password</Text>
+        <Text style={styles.label}>New Password (Visible)</Text>
         <TextInput
           style={styles.input}
           value={password}
@@ -115,7 +122,7 @@ export default function EditMemberPage() {
           textContentType="none"
           importantForAutofill="no"
         />
-        <Text style={styles.hint}>Current password cannot be viewed. Enter a new password only if you want to change it.</Text>
+        <Text style={styles.hint}>Enter password for this member and save. Use Show to view what you type.</Text>
         <TouchableOpacity onPress={() => setShowPassword((s) => !s)} style={{ alignSelf: "flex-end", marginBottom: 6 }}>
           <Text style={{ color: "#1a56db", fontWeight: "600" }}>{showPassword ? "Hide" : "Show"}</Text>
         </TouchableOpacity>
