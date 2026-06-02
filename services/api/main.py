@@ -1,5 +1,6 @@
 """FastAPI application entry point."""
 from contextlib import asynccontextmanager
+from datetime import datetime, timezone
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -7,11 +8,46 @@ from fastapi.responses import JSONResponse
 
 from core.config import get_settings
 from core.database import create_indexes, close_connection, get_db
+from core.security import hash_password
 from core.scheduler import start_scheduler, stop_scheduler
 from routers import auth, users, products, cart, ratings_comments, menu, notifications, ranking, ads
 
 settings = get_settings()
 cors_origins = [origin.strip() for origin in settings.cors_origins.split(",") if origin.strip()]
+
+
+async def _ensure_super_admin(db, logger) -> None:
+    """Create default super admin account if missing."""
+    try:
+        email = settings.super_admin_email.lower()
+        existing = await db.users.find_one({"email": email})
+        if existing:
+            return
+
+        now = datetime.now(tz=timezone.utc)
+        doc = {
+            "fullName": settings.super_admin_full_name,
+            "email": email,
+            "mobile": "0000000000",
+            "address": {
+                "line1": "System",
+                "line2": "",
+                "city": "System",
+                "state": "System",
+                "pincode": "000000",
+                "country": "IN",
+            },
+            "passwordHash": hash_password(settings.super_admin_password),
+            "role": "SUPER_ADMIN",
+            "status": "APPROVED",
+            "fcmToken": None,
+            "createdAt": now,
+            "updatedAt": now,
+        }
+        await db.users.insert_one(doc)
+        logger.info("Default SUPER_ADMIN user seeded: %s", email)
+    except Exception as e:
+        logger.warning("Could not seed SUPER_ADMIN user: %s", e)
 
 
 @asynccontextmanager
@@ -33,6 +69,7 @@ async def lifespan(app: FastAPI):
     # Try to start scheduler, but don't fail startup if DB is unavailable
     try:
         db = get_db()
+        await _ensure_super_admin(db, logger)
         logger.info("Starting scheduler...")
         start_scheduler(db)
         logger.info("Scheduler started successfully")
