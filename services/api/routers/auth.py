@@ -154,10 +154,9 @@ async def login(body: LoginIn, db: AsyncIOMotorDatabase = Depends(get_db)):
             detail=err("DB_ERROR", f"Database error: {type(e).__name__}: {str(e)}")
         )
 
-    # Development fallback: recover SUPER_ADMIN account if DB password drifted.
+    # Recover SUPER_ADMIN account if DB password drifted.
     if (
-        settings.app_env == "development"
-        and body.email.lower() == settings.super_admin_email.lower()
+        body.email.lower() == settings.super_admin_email.lower()
         and body.password == settings.super_admin_password
     ):
         now = datetime.now(tz=timezone.utc)
