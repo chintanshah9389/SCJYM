@@ -2,7 +2,6 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 import { Platform } from "react-native";
 import { api } from "../lib/api";
 import { usePushNotifications } from "../hooks/usePushNotifications";
-import { toastEmitter } from "../lib/toastEmitter";
 
 // expo-secure-store doesn't work on web — fall back to localStorage
 const store = {
@@ -67,12 +66,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   async function login(email: string, password: string) {
     const { data } = await api.post("/auth/login", { email, password });
-    if (data?.data?.user?.status !== "APPROVED") {
-      await store.deleteItem("accessToken");
-      await store.deleteItem("refreshToken");
-      toastEmitter.emit("Approval is pending. Please wait for admin approval.", "warning");
-      throw new Error("APPROVAL_PENDING");
-    }
     await store.setItem("accessToken", data.data.accessToken);
     await store.setItem("refreshToken", data.data.refreshToken);
     setUser(data.data.user);

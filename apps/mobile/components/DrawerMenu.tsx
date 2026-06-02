@@ -83,8 +83,11 @@ export default function DrawerMenu({ visible, onClose }: DrawerMenuProps) {
   async function handleLogout() {
     onClose();
     setTimeout(async () => {
-      await logout();
-      router.replace("/(auth)/login");
+      try {
+        await logout();
+      } catch {
+        // Root auth guard will handle redirect after session is cleared.
+      }
     }, 150);
   }
 

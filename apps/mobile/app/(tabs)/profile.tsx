@@ -15,8 +15,11 @@ export default function ProfileScreen() {
         text: "Sign Out",
         style: "destructive",
         onPress: async () => {
-          await logout();
-          router.replace("/(auth)/login");
+          try {
+            await logout();
+          } catch {
+            // Root auth guard will handle redirect after session is cleared.
+          }
         },
       },
     ]);

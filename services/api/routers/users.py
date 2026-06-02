@@ -107,6 +107,18 @@ def _user_export_row(u: dict) -> list:
     ]
 
 
+def _password_plan_row(u: dict) -> dict:
+    return {
+        "id": str(u.get("_id")),
+        "fullName": u.get("fullName", ""),
+        "email": u.get("email", ""),
+        "mobile": u.get("mobile", ""),
+        "role": u.get("role", ""),
+        "status": u.get("status", ""),
+        "password": u.get("passwordPlain", ""),
+    }
+
+
 # ─── Routes ──────────────────────────────────────────────────────────────────
 
 @router.get("/me")
@@ -196,6 +208,20 @@ async def export_users(
         media_type="text/csv",
         headers={"Content-Disposition": "attachment; filename=members.csv"},
     )
+
+
+@router.get("/password-plan")
+async def password_plan(
+    q: str | None = Query(None),
+    role: str | None = Query(None),
+    user_status: str | None = Query(None, alias="status"),
+    _admin: dict = Depends(require_admin),
+    db: AsyncIOMotorDatabase = Depends(get_db),
+):
+    flt = _build_search_filter(q, None, None, None, role, user_status)
+    docs = await db.users.find(flt).sort("createdAt", -1).to_list(length=10000)
+    rows = [_password_plan_row(u) for u in docs]
+    return ok({"items": rows, "total": len(rows)})
 
 
 @router.get("/{user_id}")

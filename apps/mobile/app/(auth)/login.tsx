@@ -35,10 +35,11 @@ export default function LoginScreen() {
       showToast("Login successful", "success");
       router.replace("/(tabs)");
     } catch (err: any) {
-      if (err?.message === "APPROVAL_PENDING") return;
       const msg =
         err?.response?.data?.error?.message ??
+        err?.response?.data?.detail?.error?.message ??
         err?.response?.data?.detail?.message ??
+        err?.response?.data?.detail ??
         "Login failed. Please check your email and password.";
       showToast(msg, "error");
     } finally {
