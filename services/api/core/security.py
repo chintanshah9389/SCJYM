@@ -2,20 +2,34 @@ from datetime import datetime, timedelta, timezone
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from core.config import get_settings
+import logging
 
 settings = get_settings()
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+pwd_context = CryptContext(schemes=["bcrypt", "pbkdf2_sha256"], deprecated="auto")
 
 ACCESS_TOKEN_TYPE = "access"
 REFRESH_TOKEN_TYPE = "refresh"
 
 
 def hash_password(plain: str) -> str:
-    return pwd_context.hash(plain)
+    try:
+        # Prefer bcrypt when backend is available.
+        return pwd_context.hash(plain, scheme="bcrypt")
+    except Exception as exc:
+        logging.getLogger("core.security").warning(
+            "bcrypt hash failed; falling back to pbkdf2_sha256: %s", exc
+        )
+        return pwd_context.hash(plain, scheme="pbkdf2_sha256")
 
 
 def verify_password(plain: str, hashed: str) -> bool:
-    return pwd_context.verify(plain, hashed)
+    try:
+        return pwd_context.verify(plain, hashed)
+    except Exception as exc:
+        logging.getLogger("core.security").warning(
+            "password verify failed: %s", exc
+        )
+        return False
 
 
 def _create_token(data: dict, secret: str, ttl: timedelta) -> str:
