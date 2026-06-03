@@ -7,6 +7,7 @@ import {
   ActivityIndicator,
   Alert,
   FlatList,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -14,7 +15,7 @@ import {
   TextInput,
   View,
 } from "react-native";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 
 export default function AdminPushNotificationsScreen() {
@@ -32,46 +33,56 @@ export default function AdminPushNotificationsScreen() {
     enabled: tab === "history",
   });
 
+  async function doSendPush() {
+    setSending(true);
+    setStatusMsg("Sending...");
+    try {
+      console.log("📤 Sending push notification:", { title, body, deepLink });
+      const response = await api.post("/admin/notifications/push", {
+        title: title.trim(),
+        body: body.trim(),
+        deepLink: deepLink.trim() || undefined,
+      });
+      console.log("✅ Push sent successfully:", response.data);
+      const msg = response.data?.data?.message || "Notification broadcasted to all users.";
+      setStatusMsg(`✅ ${msg}`);
+      Alert.alert("Success", msg);
+      setTitle("");
+      setBody("");
+      setDeepLink("");
+      qc.invalidateQueries({ queryKey: ["admin-notifications"] });
+    } catch (e: any) {
+      console.error("❌ Push send failed:", {
+        status: e?.response?.status,
+        error: e?.response?.data,
+        message: e?.message,
+      });
+      const errorMsg = e?.response?.data?.error?.message || e?.message || "Failed to send notification.";
+      setStatusMsg(`❌ Error: ${errorMsg}`);
+      Alert.alert("Error", errorMsg);
+    } finally {
+      setSending(false);
+    }
+  }
+
   async function handleSend() {
     if (!title.trim() || !body.trim()) {
       Alert.alert("Validation", "Title and body are required.");
       return;
     }
+
+    if (Platform.OS === "web") {
+      const confirmed = window.confirm(`Broadcast to all users?\n\n"${title}"\n${body}`);
+      if (!confirmed) return;
+      await doSendPush();
+      return;
+    }
+
     Alert.alert("Send Push", `Broadcast to all users?\n\n"${title}"\n${body}`, [
       { text: "Cancel" },
       {
         text: "Send",
-        onPress: async () => {
-          setSending(true);
-          setStatusMsg("Sending...");
-          try {
-            console.log("📤 Sending push notification:", { title, body, deepLink });
-            const response = await api.post("/admin/notifications/push", {
-              title: title.trim(),
-              body: body.trim(),
-              deepLink: deepLink.trim() || undefined,
-            });
-            console.log("✅ Push sent successfully:", response.data);
-            const msg = response.data?.data?.message || "Notification broadcasted to all users.";
-            setStatusMsg(`✅ ${msg}`);
-            Alert.alert("Success", msg);
-            setTitle("");
-            setBody("");
-            setDeepLink("");
-            qc.invalidateQueries({ queryKey: ["admin-notifications"] });
-          } catch (e: any) {
-            console.error("❌ Push send failed:", {
-              status: e?.response?.status,
-              error: e?.response?.data,
-              message: e?.message,
-            });
-            const errorMsg = e?.response?.data?.error?.message || e?.message || "Failed to send notification.";
-            setStatusMsg(`❌ Error: ${errorMsg}`);
-            Alert.alert("Error", errorMsg);
-          } finally {
-            setSending(false);
-          }
-        },
+        onPress: doSendPush,
       },
     ]);
   }
