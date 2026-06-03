@@ -22,8 +22,7 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#1a56db"
       },
-      "package": "com.scjygm.app",
-      "googleServicesFile": "./google-services.json"
+      "package": "com.scjygm.app"
     },
     "web": {
       "bundler": "metro",
@@ -32,11 +31,23 @@
     },
     "plugins": [
       "expo-router",
-      ["expo-notifications", { "color": "#1a56db", "sounds": [] }],
+      [
+        "expo-notifications",
+        {
+          "color": "#1a56db",
+          "sounds": []
+        }
+      ],
       "expo-secure-store"
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "acf87274-217e-4fbd-b30c-984d9a7ef325"
+      }
     }
   }
 }
