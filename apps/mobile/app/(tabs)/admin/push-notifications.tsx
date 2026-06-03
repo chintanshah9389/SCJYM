@@ -44,9 +44,14 @@ export default function AdminPushNotificationsScreen() {
         deepLink: deepLink.trim() || undefined,
       });
       console.log("✅ Push sent successfully:", response.data);
-      const msg = response.data?.data?.message || "Notification broadcasted to all users.";
-      setStatusMsg(`✅ ${msg}`);
-      Alert.alert("Success", msg);
+      const payload = response.data?.data || {};
+      const msg = payload?.message || "Notification broadcasted to all users.";
+      const approvedUsers = payload?.approvedUsers ?? 0;
+      const usersWithToken = payload?.usersWithToken ?? 0;
+      const usersWithoutToken = payload?.usersWithoutToken ?? 0;
+      const details = `Approved users: ${approvedUsers}\nWith token: ${usersWithToken}\nWithout token: ${usersWithoutToken}`;
+      setStatusMsg(`✅ ${msg}\n${details}`);
+      Alert.alert("Success", `${msg}\n\n${details}`);
       setTitle("");
       setBody("");
       setDeepLink("");

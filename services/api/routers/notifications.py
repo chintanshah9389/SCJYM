@@ -130,6 +130,9 @@ async def send_push(
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
     now = datetime.now(tz=timezone.utc)
+    users_count = 0
+    with_token_count = 0
+    without_token_count = 0
 
     if body.targetUserId:
         # Targeted push
@@ -137,6 +140,9 @@ async def send_push(
         if not user:
             raise HTTPException(status_code=404, detail=err("NOT_FOUND", "User not found"))
         tokens = [user["fcmToken"]] if user.get("fcmToken") else []
+        users_count = 1
+        with_token_count = len(tokens)
+        without_token_count = 0 if tokens else 1
 
         notification_doc = {
             "userId": str(user["_id"]),
@@ -152,13 +158,17 @@ async def send_push(
         }
         await db.notifications.insert_one(notification_doc)
     else:
-        # Broadcast: collect all FCM tokens, store per-user notifications
+        # Broadcast: send in-app notifications to all approved users,
+        # and push only to users that actually have a token.
         cursor = db.users.find(
-            {"status": "APPROVED", "fcmToken": {"$ne": None}},
+            {"status": "APPROVED"},
             {"_id": 1, "fcmToken": 1},
         )
         users = await cursor.to_list(length=10000)
+        users_count = len(users)
         tokens = [u["fcmToken"] for u in users if u.get("fcmToken")]
+        with_token_count = len(tokens)
+        without_token_count = users_count - with_token_count
 
         # Bulk insert notification docs for each user
         if users:
@@ -190,7 +200,14 @@ async def send_push(
         },
     )
 
-    return ok({"message": f"Notification sent to {len(tokens)} device(s)"})
+    return ok({
+        "message": f"Notification sent to {len(tokens)} device(s)",
+        "adminUserId": str(admin.get("_id")) if admin.get("_id") else None,
+        "target": "single-user" if body.targetUserId else "broadcast",
+        "approvedUsers": users_count,
+        "usersWithToken": with_token_count,
+        "usersWithoutToken": without_token_count,
+    })
 
 
 @admin_router.get("")
