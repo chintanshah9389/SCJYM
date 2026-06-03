@@ -24,6 +24,7 @@ export default function AdminPushNotificationsScreen() {
   const [body, setBody] = useState("");
   const [deepLink, setDeepLink] = useState("");
   const [sending, setSending] = useState(false);
+  const [statusMsg, setStatusMsg] = useState("");
 
   const { data: history, isLoading: histLoading } = useQuery({
     queryKey: ["admin-notifications"],
@@ -42,6 +43,7 @@ export default function AdminPushNotificationsScreen() {
         text: "Send",
         onPress: async () => {
           setSending(true);
+          setStatusMsg("Sending...");
           try {
             console.log("📤 Sending push notification:", { title, body, deepLink });
             const response = await api.post("/admin/notifications/push", {
@@ -50,7 +52,9 @@ export default function AdminPushNotificationsScreen() {
               deepLink: deepLink.trim() || undefined,
             });
             console.log("✅ Push sent successfully:", response.data);
-            Alert.alert("Sent!", response.data?.data?.message || "Notification broadcasted to all users.");
+            const msg = response.data?.data?.message || "Notification broadcasted to all users.";
+            setStatusMsg(`✅ ${msg}`);
+            Alert.alert("Success", msg);
             setTitle("");
             setBody("");
             setDeepLink("");
@@ -62,6 +66,7 @@ export default function AdminPushNotificationsScreen() {
               message: e?.message,
             });
             const errorMsg = e?.response?.data?.error?.message || e?.message || "Failed to send notification.";
+            setStatusMsg(`❌ Error: ${errorMsg}`);
             Alert.alert("Error", errorMsg);
           } finally {
             setSending(false);
@@ -69,6 +74,21 @@ export default function AdminPushNotificationsScreen() {
         },
       },
     ]);
+  }
+
+  async function testConnection() {
+    setStatusMsg("Testing connection...");
+    try {
+      const response = await api.get("/users/me");
+      console.log("✅ Connected to API:", response.data);
+      setStatusMsg(`✅ API Connected. User: ${response.data?.data?.email}`);
+      Alert.alert("Connected", `API is reachable.\nUser: ${response.data?.data?.email}`);
+    } catch (e: any) {
+      console.error("❌ Connection failed:", e?.message);
+      const msg = e?.message || "Cannot reach API";
+      setStatusMsg(`❌ ${msg}`);
+      Alert.alert("Connection Error", msg);
+    }
   }
 
   return (
@@ -85,6 +105,16 @@ export default function AdminPushNotificationsScreen() {
 
       {tab === "compose" ? (
         <ScrollView contentContainerStyle={styles.form} keyboardShouldPersistTaps="handled">
+          {statusMsg && (
+            <View style={styles.statusBox}>
+              <Text style={styles.statusText}>{statusMsg}</Text>
+            </View>
+          )}
+
+          <Pressable style={[styles.testBtn]} onPress={testConnection}>
+            <Text style={styles.testBtnText}>🔗 Test API Connection</Text>
+          </Pressable>
+
           <Text style={styles.label}>Notification Title *</Text>
           <TextInput
             style={styles.input}
@@ -157,6 +187,10 @@ const styles = StyleSheet.create({
   tabText: { fontSize: 14, color: "#6b7280", fontWeight: "600" },
   tabTextActive: { color: "#1a56db" },
   form: { padding: 20 },
+  statusBox: { backgroundColor: "#f0f9ff", borderWidth: 1, borderColor: "#93c5fd", borderRadius: 8, padding: 12, marginBottom: 16 },
+  statusText: { fontSize: 13, color: "#1e40af", fontWeight: "500" },
+  testBtn: { backgroundColor: "#10b981", borderRadius: 8, paddingVertical: 10, alignItems: "center", marginBottom: 20 },
+  testBtnText: { color: "#fff", fontSize: 14, fontWeight: "600" },
   label: { fontSize: 14, fontWeight: "600", color: "#374151", marginBottom: 6, marginTop: 14 },
   input: { backgroundColor: "#fff", borderWidth: 1, borderColor: "#d1d5db", borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12, fontSize: 15, color: "#111827" },
   textarea: { height: 110 },
