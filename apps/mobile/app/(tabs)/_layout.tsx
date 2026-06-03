@@ -72,18 +72,14 @@ export default function TabsLayout() {
             headerLeft: hamburger,
           }}
         />
-        {isAdmin ? (
-          <Tabs.Screen
-            name="members"
-            options={{
-              title: "Members",
-              tabBarIcon: ({ color }) => <Ionicons name="people-outline" size={22} color={color} />,
-              headerLeft: hamburger,
-            }}
-          />
-        ) : (
-          <Tabs.Screen name="members" options={{ href: null }} />
-        )}
+        <Tabs.Screen
+          name="members"
+          options={{
+            title: "Members",
+            tabBarIcon: ({ color }) => <Ionicons name="people-outline" size={22} color={color} />,
+            headerLeft: hamburger,
+          }}
+        />
 
         {/* ── Hidden screens (keep tab bar visible) ───── */}
         <Tabs.Screen

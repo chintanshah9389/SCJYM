@@ -22,6 +22,7 @@ export default function AdminPushNotificationsScreen() {
   const [tab, setTab] = useState<"compose" | "history">("compose");
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
+  const [deepLink, setDeepLink] = useState("");
   const [sending, setSending] = useState(false);
 
   const { data: history, isLoading: histLoading } = useQuery({
@@ -42,13 +43,26 @@ export default function AdminPushNotificationsScreen() {
         onPress: async () => {
           setSending(true);
           try {
-            await api.post("/admin/notifications/broadcast", { title: title.trim(), body: body.trim() });
-            Alert.alert("Sent!", "Notification broadcasted to all users.");
+            console.log("📤 Sending push notification:", { title, body, deepLink });
+            const response = await api.post("/admin/notifications/push", {
+              title: title.trim(),
+              body: body.trim(),
+              deepLink: deepLink.trim() || undefined,
+            });
+            console.log("✅ Push sent successfully:", response.data);
+            Alert.alert("Sent!", response.data?.data?.message || "Notification broadcasted to all users.");
             setTitle("");
             setBody("");
+            setDeepLink("");
             qc.invalidateQueries({ queryKey: ["admin-notifications"] });
           } catch (e: any) {
-            Alert.alert("Error", e?.response?.data?.error?.message ?? "Failed to send.");
+            console.error("❌ Push send failed:", {
+              status: e?.response?.status,
+              error: e?.response?.data,
+              message: e?.message,
+            });
+            const errorMsg = e?.response?.data?.error?.message || e?.message || "Failed to send notification.";
+            Alert.alert("Error", errorMsg);
           } finally {
             setSending(false);
           }
@@ -90,6 +104,16 @@ export default function AdminPushNotificationsScreen() {
             multiline
             numberOfLines={4}
             textAlignVertical="top"
+          />
+
+          <Text style={styles.label}>Deep Link (optional)</Text>
+          <TextInput
+            style={styles.input}
+            value={deepLink}
+            onChangeText={setDeepLink}
+            placeholder="e.g. /(tabs)/notifications or /(tabs)/product/123"
+            placeholderTextColor="#9ca3af"
+            autoCapitalize="none"
           />
 
           <Text style={styles.hint}>📡 This will be sent to ALL registered users with notifications enabled.</Text>

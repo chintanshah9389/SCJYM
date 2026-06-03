@@ -23,6 +23,7 @@ export default function MembersScreen() {
   const { user } = useAuth();
   const router = useRouter();
   const isAdmin = user?.role === "ADMIN" || user?.role === "SUPER_ADMIN";
+  const queryClient = useQueryClient();
 
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
@@ -31,21 +32,12 @@ export default function MembersScreen() {
   const [statusFilters, setStatusFilters] = useState<string[]>([]);
   const [exporting, setExporting] = useState(false);
 
-  if (!isAdmin) {
-    return (
-      <View style={styles.center}>
-        <Text style={styles.noAccess}>Access restricted to admins.</Text>
-      </View>
-    );
-  }
-
-  const queryClient = useQueryClient();
-
-  const ROLES = ["MEMBER", "ADMIN", "SUPER_ADMIN"];
+  const ROLES = user?.role === "SUPER_ADMIN" ? ["MEMBER", "ADMIN", "SUPER_ADMIN"] : ["MEMBER", "ADMIN"];
   const STATUSES = ["PENDING_APPROVAL", "APPROVED", "REJECTED", "SUSPENDED"];
 
   const { data, isLoading } = useQuery({
     queryKey: ["members", search, page, roleFilters.join(","), statusFilters.join(",")],
+    enabled: !!user,
     queryFn: () => {
       const params: any = { q: search || undefined, page, limit: 20 };
       // If user selected exactly one role/status, let server filter. If multiple, we'll filter client-side.
@@ -149,9 +141,11 @@ export default function MembersScreen() {
     <View style={styles.container}>
       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
         <Text style={styles.header}>Members</Text>
-        <TouchableOpacity onPress={openCreate} style={{ marginRight: 12 }}>
-          <Text style={{ color: "#1a56db", fontWeight: "700" }}>Add</Text>
-        </TouchableOpacity>
+        {isAdmin && (
+          <TouchableOpacity onPress={openCreate} style={{ marginRight: 12 }}>
+            <Text style={{ color: "#1a56db", fontWeight: "700" }}>Add</Text>
+          </TouchableOpacity>
+        )}
       </View>
 
         <TextInput
@@ -161,6 +155,7 @@ export default function MembersScreen() {
         onChangeText={(v) => { setSearch(v); setPage(1); }}
       />
 
+      {isAdmin && (
       <View style={{ marginHorizontal: 12 }}>
         <TouchableOpacity onPress={() => setShowFilters((s) => !s)} style={{ paddingVertical: 6 }}>
           <Text style={{ color: "#374151", fontWeight: "700" }}>Filters {showFilters ? "▴" : "▾"}</Text>
@@ -211,28 +206,31 @@ export default function MembersScreen() {
           </>
         )}
       </View>
+      )}
 
       {isLoading ? (
         <ActivityIndicator size="large" color="#1a56db" style={{ marginTop: 40 }} />
       ) : (
         <FlatList
-          data={members}
+          data={displayedMembers}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
             <View style={styles.card}>
               <Text style={styles.name}>{item.fullName}</Text>
               <Text style={styles.sub}>{item.email} · {item.mobile}</Text>
-              <View style={{ flexDirection: "row", gap: 8, marginTop: 8 }}>
-                <TouchableOpacity onPress={() => openPwd(item)} style={{ padding: 6 }}>
-                  <Text style={{ color: "#b45309" }}>Reset PW</Text>
-                </TouchableOpacity>
-                <TouchableOpacity onPress={() => openEdit(item)} style={{ padding: 6 }}>
-                  <Text style={{ color: "#1a56db" }}>Edit</Text>
-                </TouchableOpacity>
-                <TouchableOpacity onPress={() => confirmDelete(item)} style={{ padding: 6 }}>
-                  <Text style={{ color: "#ef4444" }}>Delete</Text>
-                </TouchableOpacity>
-              </View>
+              {isAdmin && (
+                <View style={{ flexDirection: "row", gap: 8, marginTop: 8 }}>
+                  <TouchableOpacity onPress={() => openPwd(item)} style={{ padding: 6 }}>
+                    <Text style={{ color: "#b45309" }}>Reset PW</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={() => openEdit(item)} style={{ padding: 6 }}>
+                    <Text style={{ color: "#1a56db" }}>Edit</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={() => confirmDelete(item)} style={{ padding: 6 }}>
+                    <Text style={{ color: "#ef4444" }}>Delete</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
             </View>
           )}
           ListEmptyComponent={<Text style={styles.empty}>No members found.</Text>}

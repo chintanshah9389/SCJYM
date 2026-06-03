@@ -3,11 +3,14 @@ import { View, Text, TextInput, StyleSheet, TouchableOpacity, ActivityIndicator,
 import { api } from "@/lib/api";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useQueryClient } from "@tanstack/react-query";
+import { useAuth } from "../../context/AuthContext";
 
 export default function CreateMemberPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const params: any = useLocalSearchParams();
+  const { user } = useAuth();
+  const roleOptions = user?.role === "SUPER_ADMIN" ? ["MEMBER", "ADMIN", "SUPER_ADMIN"] : ["MEMBER", "ADMIN"];
   const [form, setForm] = useState<any>({
     fullName: "",
     email: "",
@@ -20,9 +23,9 @@ export default function CreateMemberPage() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (params?.role) setForm((s: any) => ({ ...s, role: params.role }));
+    if (params?.role && roleOptions.includes(params.role)) setForm((s: any) => ({ ...s, role: params.role }));
     if (params?.status) setForm((s: any) => ({ ...s, status: params.status }));
-  }, [params?.role, params?.status]);
+  }, [params?.role, params?.status, roleOptions.join(",")]);
 
   async function submit() {
     setLoading(true);

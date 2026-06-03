@@ -119,6 +119,31 @@ def _password_plan_row(u: dict) -> dict:
     }
 
 
+def _can_manage_super_admin(actor: dict) -> bool:
+    return actor.get("role") == "SUPER_ADMIN"
+
+
+def _apply_super_admin_visibility_filter(flt: dict, actor: dict) -> dict:
+    if _can_manage_super_admin(actor):
+        return flt
+
+    out = dict(flt)
+    role_filter = out.get("role")
+    if role_filter == "SUPER_ADMIN":
+        # Force empty result for non-super-admin callers.
+        out["_id"] = {"$exists": False}
+        return out
+
+    if isinstance(role_filter, dict):
+        role_filter = dict(role_filter)
+        role_filter["$ne"] = "SUPER_ADMIN"
+        out["role"] = role_filter
+    elif role_filter is None:
+        out["role"] = {"$ne": "SUPER_ADMIN"}
+
+    return out
+
+
 # ─── Routes ──────────────────────────────────────────────────────────────────
 
 @router.get("/me")
@@ -151,10 +176,11 @@ async def list_users(
     limit: int = Query(20, ge=1, le=100),
     sort_by: str = Query("createdAt"),
     sort_dir: int = Query(-1),
-    _admin: dict = Depends(require_admin),
+    current_user: dict = Depends(get_current_user),
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
     flt = _build_search_filter(q, city, state, pincode, role, user_status)
+    flt = _apply_super_admin_visibility_filter(flt, current_user)
     skip = (page - 1) * limit
     total = await db.users.count_documents(flt)
     cursor = db.users.find(flt, {"passwordHash": 0, "passwordPlain": 0}).sort(sort_by, sort_dir).skip(skip).limit(limit)
@@ -171,10 +197,11 @@ async def export_users(
     role: str | None = Query(None),
     user_status: str | None = Query(None, alias="status"),
     fmt: str = Query("csv", pattern="^(csv|xlsx)$"),
-    _admin: dict = Depends(require_admin),
+    admin: dict = Depends(require_admin),
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
     flt = _build_search_filter(q, city, state, pincode, role, user_status)
+    flt = _apply_super_admin_visibility_filter(flt, admin)
     cursor = db.users.find(flt, {"passwordHash": 0, "passwordPlain": 0}).sort("createdAt", -1)
     docs = serialize_list(await cursor.to_list(length=10000))
 
@@ -215,10 +242,11 @@ async def password_plan(
     q: str | None = Query(None),
     role: str | None = Query(None),
     user_status: str | None = Query(None, alias="status"),
-    _admin: dict = Depends(require_admin),
+    admin: dict = Depends(require_admin),
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
     flt = _build_search_filter(q, None, None, None, role, user_status)
+    flt = _apply_super_admin_visibility_filter(flt, admin)
     docs = await db.users.find(flt).sort("createdAt", -1).to_list(length=10000)
     rows = [_password_plan_row(u) for u in docs]
     return ok({"items": rows, "total": len(rows)})
@@ -227,11 +255,13 @@ async def password_plan(
 @router.get("/{user_id}")
 async def get_user(
     user_id: str,
-    _admin: dict = Depends(require_admin),
+    admin: dict = Depends(require_admin),
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
     user = await db.users.find_one({"_id": ObjectId(user_id)})
     if not user:
+        raise HTTPException(status_code=404, detail=err("NOT_FOUND", "User not found"))
+    if user.get("role") == "SUPER_ADMIN" and not _can_manage_super_admin(admin):
         raise HTTPException(status_code=404, detail=err("NOT_FOUND", "User not found"))
     payload = serialize_doc(user)
     payload["hasPassword"] = bool(user.get("passwordHash"))
@@ -248,6 +278,12 @@ async def approve_user(
     admin: dict = Depends(require_admin),
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
+    target = await db.users.find_one({"_id": ObjectId(user_id)}, {"role": 1})
+    if not target:
+        raise HTTPException(status_code=404, detail=err("NOT_FOUND", "User not found"))
+    if target.get("role") == "SUPER_ADMIN" and not _can_manage_super_admin(admin):
+        raise HTTPException(status_code=403, detail=err("FORBIDDEN", "Admins cannot modify SUPER_ADMIN users"))
+
     if body.status not in ("APPROVED", "REJECTED"):
         raise HTTPException(
             status_code=400, detail=err("VALIDATION_ERROR", "status must be APPROVED or REJECTED")
@@ -276,9 +312,15 @@ class PasswordUpdateIn(BaseModel):
 async def admin_update_password(
     user_id: str,
     body: PasswordUpdateIn,
-    _admin: dict = Depends(require_admin),
+    admin: dict = Depends(require_admin),
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
+    target = await db.users.find_one({"_id": ObjectId(user_id)}, {"role": 1})
+    if not target:
+        raise HTTPException(status_code=404, detail=err("NOT_FOUND", "User not found"))
+    if target.get("role") == "SUPER_ADMIN" and not _can_manage_super_admin(admin):
+        raise HTTPException(status_code=403, detail=err("FORBIDDEN", "Admins cannot update SUPER_ADMIN passwords"))
+
     now = datetime.now(tz=timezone.utc)
     result = await db.users.update_one(
         {"_id": ObjectId(user_id)},
@@ -296,9 +338,12 @@ async def admin_update_password(
 @router.post("", status_code=status.HTTP_201_CREATED)
 async def admin_create_user(
     body: UserAdminCreateIn,
-    _admin: dict = Depends(require_admin),
+    admin: dict = Depends(require_admin),
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
+    if body.role == "SUPER_ADMIN" and not _can_manage_super_admin(admin):
+        raise HTTPException(status_code=403, detail=err("FORBIDDEN", "Admins cannot create SUPER_ADMIN users"))
+
     # uniqueness
     existing = await db.users.find_one({"$or": [{"email": body.email.lower()}, {"mobile": body.mobile}]})
     if existing:
@@ -319,7 +364,7 @@ async def admin_create_user(
         "fcmToken": None,
         "createdAt": now,
         "updatedAt": now,
-        "approvedBy": str(_admin["_id"]) if body.status == "APPROVED" else None,
+        "approvedBy": str(admin["_id"]) if body.status == "APPROVED" else None,
     }
     result = await db.users.insert_one(doc)
     doc["_id"] = result.inserted_id
@@ -330,9 +375,15 @@ async def admin_create_user(
 async def admin_update_user(
     user_id: str,
     body: UserAdminUpdateIn,
-    _admin: dict = Depends(require_admin),
+    admin: dict = Depends(require_admin),
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
+    target = await db.users.find_one({"_id": ObjectId(user_id)}, {"role": 1})
+    if not target:
+        raise HTTPException(status_code=404, detail=err("NOT_FOUND", "User not found"))
+    if target.get("role") == "SUPER_ADMIN" and not _can_manage_super_admin(admin):
+        raise HTTPException(status_code=403, detail=err("FORBIDDEN", "Admins cannot edit SUPER_ADMIN users"))
+
     updates: dict = {}
     if body.fullName is not None:
         updates["fullName"] = body.fullName
@@ -350,11 +401,13 @@ async def admin_update_user(
     if body.address is not None:
         updates["address"] = body.address.model_dump()
     if body.role is not None:
+        if body.role == "SUPER_ADMIN" and not _can_manage_super_admin(admin):
+            raise HTTPException(status_code=403, detail=err("FORBIDDEN", "Admins cannot assign SUPER_ADMIN role"))
         updates["role"] = body.role
     if body.status is not None:
         updates["status"] = body.status
         if body.status == "APPROVED":
-            updates["approvedBy"] = str(_admin["_id"])
+            updates["approvedBy"] = str(admin["_id"])
 
     if not updates:
         return ok({"message": "No changes"})
@@ -370,7 +423,7 @@ async def admin_update_user(
 @router.delete("/{user_id}")
 async def admin_delete_user(
     user_id: str,
-    _admin: dict = Depends(require_admin),
+    admin: dict = Depends(require_admin),
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
     user = await db.users.find_one({"_id": ObjectId(user_id)})
@@ -379,7 +432,7 @@ async def admin_delete_user(
     # prevent deleting SUPER_ADMIN or self
     if user.get("role") == "SUPER_ADMIN":
         raise HTTPException(status_code=400, detail=err("FORBIDDEN", "Cannot delete SUPER_ADMIN"))
-    if str(_admin.get("_id")) == str(user.get("_id")):
+    if str(admin.get("_id")) == str(user.get("_id")):
         raise HTTPException(status_code=400, detail=err("FORBIDDEN", "Cannot delete yourself"))
 
     await db.users.delete_one({"_id": ObjectId(user_id)})

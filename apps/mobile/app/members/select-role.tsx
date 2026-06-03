@@ -1,12 +1,13 @@
 import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
-
-const ROLES = ["MEMBER", "ADMIN", "SUPER_ADMIN"];
+import { useAuth } from "../../context/AuthContext";
 
 export default function SelectRolePage() {
   const router = useRouter();
   const params: any = useLocalSearchParams();
+  const { user } = useAuth();
+  const ROLES = user?.role === "SUPER_ADMIN" ? ["MEMBER", "ADMIN", "SUPER_ADMIN"] : ["MEMBER", "ADMIN"];
   const returnTo = params?.returnTo ?? "/members";
 
   function choose(r: string) {

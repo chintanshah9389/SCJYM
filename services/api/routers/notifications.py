@@ -50,8 +50,7 @@ async def send_fcm_push(
     fcm_tokens = [t for t in tokens if t not in expo_tokens]
 
     if settings.app_env == "development":
-        logger.info("DEV push to %d tokens: title=%s body=%s", len(tokens), title, body)
-        return
+        logger.info("DEV mode push enabled: attempting send to %d tokens", len(tokens))
 
     if expo_tokens:
         expo_messages = [

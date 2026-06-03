@@ -8,6 +8,7 @@ import toast from "react-hot-toast";
 export default function MembersPage() {
   const { data: session } = useSession();
   const api = createApiClient((session as any)?.accessToken);
+  const isSuperAdmin = (session as any)?.user?.role === "SUPER_ADMIN";
 
   const [q, setQ] = useState("");
   const [page, setPage] = useState(1);
@@ -265,7 +266,7 @@ export default function MembersPage() {
               <select className="col-span-1 border px-3 py-2 rounded" value={memberForm.role} onChange={(e) => setMemberForm((s:any) => ({ ...s, role: e.target.value }))}>
                 <option value="MEMBER">MEMBER</option>
                 <option value="ADMIN">ADMIN</option>
-                <option value="SUPER_ADMIN">SUPER_ADMIN</option>
+                {isSuperAdmin && <option value="SUPER_ADMIN">SUPER_ADMIN</option>}
               </select>
               <select className="col-span-1 border px-3 py-2 rounded" value={memberForm.status} onChange={(e) => setMemberForm((s:any) => ({ ...s, status: e.target.value }))}>
                 <option value="APPROVED">APPROVED</option>

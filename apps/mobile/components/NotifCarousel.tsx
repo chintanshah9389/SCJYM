@@ -49,7 +49,7 @@ export default function NotifCarousel() {
 
   if (!user || notifications.length === 0) return null;
 
-  const unread = notifications.filter((n: any) => !n.isRead);
+  const unread = notifications.filter((n: any) => !(n.read ?? n.isRead));
   const display = unread.length > 0 ? unread : notifications.slice(0, 5);
 
   async function markAllRead() {
@@ -93,7 +93,7 @@ export default function NotifCarousel() {
                 <Text style={styles.cardTitle} numberOfLines={1}>{n.title}</Text>
                 <Text style={styles.cardMsg} numberOfLines={2}>{n.body}</Text>
               </View>
-              {!n.isRead && <View style={[styles.unreadDot, { backgroundColor: color }]} />}
+              {!(n.read ?? n.isRead) && <View style={[styles.unreadDot, { backgroundColor: color }]} />}
             </TouchableOpacity>
           );
         })}

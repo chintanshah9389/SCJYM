@@ -63,6 +63,8 @@ function RootNavigator() {
         const data = response.notification.request.content.data as Record<string, string>;
         if (data?.productId) {
           router.push({ pathname: "(tabs)/product/[id]" as any, params: { id: data.productId } });
+        } else if (data?.deepLink) {
+          router.push(data.deepLink as any);
         } else if (data?.screen) {
           router.push(data.screen as any);
         }

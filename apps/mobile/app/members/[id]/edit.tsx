@@ -3,12 +3,14 @@ import { View, Text, TextInput, StyleSheet, TouchableOpacity, ActivityIndicator,
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { api } from "@/lib/api";
 import { useQueryClient } from "@tanstack/react-query";
+import { useAuth } from "../../../context/AuthContext";
 
 export default function EditMemberPage() {
   const router = useRouter();
   const params: any = useLocalSearchParams();
   const id = params?.id;
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState<any>(null);
@@ -18,7 +20,7 @@ export default function EditMemberPage() {
   const [showPassword, setShowPassword] = useState(true);
   const [initialPassword, setInitialPassword] = useState<string>("");
 
-  const ROLES = ["MEMBER", "ADMIN", "SUPER_ADMIN"];
+  const ROLES = user?.role === "SUPER_ADMIN" ? ["MEMBER", "ADMIN", "SUPER_ADMIN"] : ["MEMBER", "ADMIN"];
   const STATUSES = ["PENDING_APPROVAL", "APPROVED", "REJECTED", "SUSPENDED"];
 
   useEffect(() => {
