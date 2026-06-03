@@ -5,7 +5,15 @@
  */
 import { useEffect } from "react";
 import { Platform } from "react-native";
+import Constants from "expo-constants";
 import { api } from "@/lib/api";
+
+function isExpoGo(): boolean {
+  return (
+    Constants.appOwnership === "expo" ||
+    Constants.executionEnvironment === "storeClient"
+  );
+}
 
 // Only register notification handler on native platforms
 if (Platform.OS !== "web") {
@@ -22,6 +30,12 @@ if (Platform.OS !== "web") {
 export function usePushNotifications(userId?: string) {
   useEffect(() => {
     if (!userId || Platform.OS === "web") return;
+
+    if (isExpoGo()) {
+      console.warn("Push registration skipped in Expo Go. Use a development build for remote push notifications.");
+      return;
+    }
+
     (async () => {
       try {
         console.log("🔔 Registering for push notifications...");
@@ -51,9 +65,8 @@ async function registerForPushNotificationsAsync(): Promise<string | null> {
   const Notifications = require("expo-notifications");
 
   if (!Device.isDevice) {
-    console.warn("⚠️ Not a physical device - generating fake token for testing");
-    // Generate a fake token for emulator testing
-    return `ExponentPushToken[fake-emulator-${Math.random().toString(36).substring(7)}]`;
+    console.warn("⚠️ Not a physical device. Remote push needs a physical device.");
+    return null;
   }
 
   const { status: existingStatus } = await Notifications.getPermissionsAsync();
