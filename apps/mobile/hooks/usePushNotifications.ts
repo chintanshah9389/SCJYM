@@ -22,11 +22,25 @@ if (Platform.OS !== "web") {
 export function usePushNotifications(userId?: string) {
   useEffect(() => {
     if (!userId || Platform.OS === "web") return;
-    registerForPushNotificationsAsync().then((token) => {
-      if (token) {
-        api.patch("/users/me/fcm-token", { fcmToken: token }).catch(() => {});
+    (async () => {
+      try {
+        console.log("🔔 Registering for push notifications...");
+        const token = await registerForPushNotificationsAsync();
+        console.log("🔔 Got token:", token ? `${token.slice(0, 20)}...` : "null");
+        if (token) {
+          try {
+            await api.patch("/users/me/fcm-token", { fcmToken: token });
+            console.log("✅ FCM token saved to backend");
+          } catch (e: any) {
+            console.error("❌ Failed to save FCM token:", e?.response?.data || e?.message);
+          }
+        } else {
+          console.warn("⚠️ No push token obtained (permissions denied?)");
+        }
+      } catch (e) {
+        console.error("❌ Push registration error:", e);
       }
-    });
+    })();
   }, [userId]);
 }
 
@@ -36,7 +50,11 @@ async function registerForPushNotificationsAsync(): Promise<string | null> {
   const Device = require("expo-device");
   const Notifications = require("expo-notifications");
 
-  if (!Device.isDevice) return null;
+  if (!Device.isDevice) {
+    console.warn("⚠️ Not a physical device - generating fake token for testing");
+    // Generate a fake token for emulator testing
+    return `ExponentPushToken[fake-emulator-${Math.random().toString(36).substring(7)}]`;
+  }
 
   const { status: existingStatus } = await Notifications.getPermissionsAsync();
   let finalStatus = existingStatus;
@@ -44,7 +62,10 @@ async function registerForPushNotificationsAsync(): Promise<string | null> {
     const { status } = await Notifications.requestPermissionsAsync();
     finalStatus = status;
   }
-  if (finalStatus !== "granted") return null;
+  if (finalStatus !== "granted") {
+    console.warn("⚠️ Push notification permissions not granted");
+    return null;
+  }
 
   const tokenData = await Notifications.getExpoPushTokenAsync({
     projectId: process.env.EXPO_PUBLIC_EAS_PROJECT_ID,
