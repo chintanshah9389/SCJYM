@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "278852138293",
+    "project_id": "scjym-917d0",
+    "storage_bucket": "scjym-917d0.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:278852138293:android:0502d6802c0f4be4f9c87c",
+        "android_client_info": {
+          "package_name": "com.scjygm.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB05EJlZS-ZWCRTdowChBe1FaDakK8iSmA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
