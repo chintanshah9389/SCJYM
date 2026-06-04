@@ -8,6 +8,21 @@ import { Platform } from "react-native";
 import Constants from "expo-constants";
 import { api } from "@/lib/api";
 
+function getExpoProjectId(): string | null {
+  const envProjectId = process.env.EXPO_PUBLIC_EAS_PROJECT_ID?.trim();
+  if (envProjectId && envProjectId !== "your-eas-project-id") {
+    return envProjectId;
+  }
+
+  const easProjectId =
+    Constants.expoConfig?.extra?.eas?.projectId ??
+    (Constants as any).easConfig?.projectId;
+
+  return typeof easProjectId === "string" && easProjectId.trim().length > 0
+    ? easProjectId
+    : null;
+}
+
 function isExpoGo(): boolean {
   return (
     Constants.appOwnership === "expo" ||
@@ -80,9 +95,13 @@ async function registerForPushNotificationsAsync(): Promise<string | null> {
     return null;
   }
 
-  const tokenData = await Notifications.getExpoPushTokenAsync({
-    projectId: process.env.EXPO_PUBLIC_EAS_PROJECT_ID,
-  });
+  const projectId = getExpoProjectId();
+  if (!projectId) {
+    console.warn("⚠️ Missing Expo projectId. Push token registration skipped.");
+    return null;
+  }
+
+  const tokenData = await Notifications.getExpoPushTokenAsync({ projectId });
 
   if (Platform.OS === "android") {
     await Notifications.setNotificationChannelAsync("default", {

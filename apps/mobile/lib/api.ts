@@ -3,9 +3,13 @@ import { Platform } from "react-native";
 import Constants from "expo-constants";
 import { toastEmitter } from "./toastEmitter";
 
+const PROD_API_BASE = "https://scjym-api.onrender.com/api/v1";
+
 function getApiBase(): string {
+  const configuredBaseUrl = process.env.EXPO_PUBLIC_API_BASE_URL?.trim();
   const useProd = process.env.EXPO_PUBLIC_USE_PROD === "true";
-  if (useProd) return "https://scjym-api.onrender.com/api/v1";
+  if (configuredBaseUrl) return configuredBaseUrl;
+  if (useProd) return PROD_API_BASE;
   // In a native dev build (Expo Go / dev client), derive host from the Metro bundler address
   // so it works on physical devices and emulators without hardcoding an IP.
   if (__DEV__ && Platform.OS !== "web") {
@@ -15,10 +19,22 @@ function getApiBase(): string {
       return `http://${host}:8000/api/v1`;
     }
   }
-  return process.env.EXPO_PUBLIC_API_BASE_URL ?? "http://localhost:8000/api/v1";
+  return PROD_API_BASE;
 }
 
 const API_BASE = getApiBase();
+let hasReportedApiBase = false;
+
+function reportResolvedApiBase() {
+  if (hasReportedApiBase) return;
+  hasReportedApiBase = true;
+
+  console.info(`[api] Using backend: ${API_BASE}`);
+
+  if (__DEV__) {
+    toastEmitter.emit(`API: ${API_BASE}`, "success");
+  }
+}
 
 // Web-safe token storage
 async function getToken(key: string): Promise<string | null> {
@@ -55,6 +71,7 @@ function getApiMessage(payload: any): string | null {
 
 // ── Request interceptor: attach access token ──────────────────────────────
 api.interceptors.request.use(async (config) => {
+  reportResolvedApiBase();
   const token = await getToken("accessToken");
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
