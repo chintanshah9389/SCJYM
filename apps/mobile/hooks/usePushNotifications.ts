@@ -46,6 +46,13 @@ export function usePushNotifications(userId?: string) {
   useEffect(() => {
     if (!userId || Platform.OS === "web") return;
 
+    console.log("🔎 Push env:", {
+      appOwnership: Constants.appOwnership,
+      executionEnvironment: Constants.executionEnvironment,
+      projectId: getExpoProjectId(),
+      platform: Platform.OS,
+    });
+
     if (isExpoGo()) {
       console.warn("Push registration skipped in Expo Go. Use a development build for remote push notifications.");
       return;
@@ -78,6 +85,13 @@ export function usePushNotifications(userId?: string) {
         }
       } catch (e) {
         console.error("❌ Push registration error:", e);
+        console.error("❌ Push registration details:", {
+          message: (e as any)?.message,
+          code: (e as any)?.code,
+          appOwnership: Constants.appOwnership,
+          executionEnvironment: Constants.executionEnvironment,
+          projectId: getExpoProjectId(),
+        });
       }
     })();
 
