@@ -31,6 +31,10 @@ class FcmTokenIn(BaseModel):
     fcmToken: str
 
 
+class WebPushSubscriptionIn(BaseModel):
+    subscription: dict  # Contains: endpoint, keys (p256dh, auth)
+
+
 
 # Admin create/update schemas
 class AddressIn(BaseModel):
@@ -162,6 +166,19 @@ async def update_fcm_token(
         {"$set": {"fcmToken": body.fcmToken, "updatedAt": datetime.now(tz=timezone.utc)}},
     )
     return ok({"message": "FCM token updated"})
+
+
+@router.patch("/me/web-push-subscription")
+async def update_web_push_subscription(
+    body: WebPushSubscriptionIn,
+    current_user: dict = Depends(get_current_user),
+    db: AsyncIOMotorDatabase = Depends(get_db),
+):
+    await db.users.update_one(
+        {"_id": current_user["_id"]},
+        {"$set": {"webPushSubscription": body.subscription, "updatedAt": datetime.now(tz=timezone.utc)}},
+    )
+    return ok({"message": "Web push subscription updated"})
 
 
 @router.get("")

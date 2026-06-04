@@ -37,7 +37,7 @@ if (Platform.OS !== "web") {
     handleNotification: async () => ({
       shouldShowAlert: true,
       shouldPlaySound: true,
-      shouldSetBadge: false,
+      shouldSetBadge: true,
     }),
   });
 }
@@ -57,11 +57,21 @@ export function usePushNotifications(userId?: string) {
         const token = await registerForPushNotificationsAsync();
         console.log("🔔 Got token:", token ? `${token.slice(0, 20)}...` : "null");
         if (token) {
-          try {
-            await api.patch("/users/me/fcm-token", { fcmToken: token });
-            console.log("✅ FCM token saved to backend");
-          } catch (e: any) {
-            console.error("❌ Failed to save FCM token:", e?.response?.data || e?.message);
+          // Retry up to 3 times — Render free tier cold starts can take 30-50s,
+          // exceeding the default axios timeout on the first attempt.
+          let saved = false;
+          for (let attempt = 1; attempt <= 3 && !saved; attempt++) {
+            try {
+              await api.patch("/users/me/fcm-token", { fcmToken: token }, { timeout: 60_000 });
+              console.log("✅ FCM token saved to backend");
+              saved = true;
+            } catch (e: any) {
+              console.warn(`⚠️ FCM token save attempt ${attempt}/3 failed:`, e?.response?.data || e?.message);
+              if (attempt < 3) await new Promise((r) => setTimeout(r, 5000));
+            }
+          }
+          if (!saved) {
+            console.error("❌ Failed to save FCM token after 3 attempts");
           }
         } else {
           console.warn("⚠️ No push token obtained (permissions denied?)");
@@ -70,7 +80,40 @@ export function usePushNotifications(userId?: string) {
         console.error("❌ Push registration error:", e);
       }
     })();
+
+    // Set up listeners for incoming notifications
+    setupNotificationListeners();
   }, [userId]);
+}
+
+function setupNotificationListeners() {
+  if (Platform.OS === "web") return;
+
+  const Notifications = require("expo-notifications");
+
+  // Listen for notifications received while app is foreground
+  const foregroundSubscription = Notifications.addNotificationReceivedListener((notification:any) => {
+    console.log("📬 Notification received (foreground):", notification.request.content.title);
+  });
+
+  // Listen for notifications tapped while app is closed or backgrounded
+  const responseSubscription = Notifications.addNotificationResponseReceivedListener((response:any) => {
+    const { title, body } = response.notification.request.content;
+    const deepLink = response.notification.request.content.data?.deepLink;
+    console.log("👆 Notification tapped:", title);
+    
+    // Handle deep linking if provided
+    if (deepLink) {
+      console.log("🔗 Navigating to:", deepLink);
+      // Deep linking would be handled by expo-linking setup
+    }
+  });
+
+  // Cleanup on unmount
+  return () => {
+    foregroundSubscription.remove();
+    responseSubscription.remove();
+  };
 }
 
 async function registerForPushNotificationsAsync(): Promise<string | null> {
@@ -101,8 +144,7 @@ async function registerForPushNotificationsAsync(): Promise<string | null> {
     return null;
   }
 
-  const tokenData = await Notifications.getExpoPushTokenAsync({ projectId });
-
+  // Android requires the notification channel to exist before fetching the token
   if (Platform.OS === "android") {
     await Notifications.setNotificationChannelAsync("default", {
       name: "default",
@@ -111,6 +153,8 @@ async function registerForPushNotificationsAsync(): Promise<string | null> {
       lightColor: "#FF231F7C",
     });
   }
+
+  const tokenData = await Notifications.getExpoPushTokenAsync({ projectId });
 
   return tokenData.data;
 }

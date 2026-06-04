@@ -21,6 +21,10 @@ class Settings(BaseSettings):
     # FCM
     fcm_server_key: str = ""
 
+    # Web Push (VAPID)
+    vapid_public_key: str = ""
+    vapid_private_key: str = ""
+
     # Cloudinary
     cloudinary_cloud_name: str = ""
     cloudinary_api_key: str = ""

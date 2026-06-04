@@ -9,6 +9,7 @@ User:
   PATCH  /notifications/{id}/read Mark as read
   PATCH  /notifications/read-all  Mark all as read
 """
+import json
 import logging
 from datetime import datetime, timezone
 
@@ -109,6 +110,123 @@ async def send_fcm_push(
         logger.exception("FCM send failed")
 
 
+async def send_web_push(
+    subscriptions: list[dict],
+    title: str,
+    body: str,
+    image_url: str | None = None,
+    data: dict | None = None,
+) -> None:
+    """Send web push notifications via Web Push Protocol (RFC 8291).
+
+    Subscriptions are stored as PushSubscription objects from browser Web Push API.
+    Each subscription has: endpoint, keys (p256dh, auth)
+    """
+    if not subscriptions or not settings.vapid_private_key or not settings.vapid_public_key:
+        if not subscriptions:
+            return
+        logger.warning("VAPID keys not configured. Skipping %d web push subscription(s).", len(subscriptions))
+        return
+
+    try:
+        from pywebpush import webpush
+    except ImportError:
+        logger.warning("pywebpush not installed. Skipping web push notifications.")
+        return
+
+    payload = {
+        "title": title,
+        "body": body,
+        "icon": "/icon.png",
+        "badge": "/icon.png",
+        "data": data or {},
+        **({"image": image_url} if image_url else {}),
+    }
+
+    for sub in subscriptions:
+        try:
+            webpush(
+                subscription_info=sub,
+                data=json.dumps(payload),
+                vapid_private_key=settings.vapid_private_key,
+                vapid_claims={"sub": "mailto:admin@example.com"},
+            )
+            logger.debug("Web push sent to %s", sub.get("endpoint", "")[:30])
+        except Exception:
+            logger.exception("Web push send failed for subscription")
+
+
+async def create_and_send_notification(
+    db: AsyncIOMotorDatabase,
+    user_id: str,
+    title: str,
+    body: str,
+    image_url: str | None = None,
+    video_url: str | None = None,
+    youtube_url: str | None = None,
+    deep_link: str | None = None,
+    notification_type: str = "GENERAL",
+) -> None:
+    """
+    Create a notification for a user AND send push notifications.
+    This is the primary function to use when notifying users about events.
+    """
+    now = datetime.now(tz=timezone.utc)
+
+    # Get user and their push tokens
+    user = await db.users.find_one({"_id": ObjectId(user_id)})
+    if not user:
+        logger.warning("User %s not found for notification", user_id)
+        return
+
+    # Create notification document
+    notification_doc = {
+        "userId": str(user["_id"]),
+        "title": title,
+        "body": body,
+        "imageUrl": image_url,
+        "videoUrl": video_url,
+        "youtubeUrl": youtube_url,
+        "deepLink": deep_link,
+        "type": notification_type,
+        "read": False,
+        "createdAt": now,
+    }
+    await db.notifications.insert_one(notification_doc)
+    logger.debug("✅ Notification created: %s", title)
+
+    # Send push notifications
+    tokens = [user["fcmToken"]] if user.get("fcmToken") else []
+    web_subs = [user["webPushSubscription"]] if user.get("webPushSubscription") else []
+
+    if tokens:
+        await send_fcm_push(
+            tokens,
+            title,
+            body,
+            image_url=image_url,
+            data={
+                "deepLink": deep_link or "",
+                "youtubeUrl": youtube_url or "",
+            },
+        )
+        logger.info("📤 FCM push sent to user %s", user_id)
+
+    if web_subs:
+        await send_web_push(
+            web_subs,
+            title,
+            body,
+            image_url=image_url,
+            data={
+                "deepLink": deep_link or "",
+                "youtubeUrl": youtube_url or "",
+            },
+        )
+        logger.info("📤 Web push sent to user %s", user_id)
+
+
+
 # ─── Schemas ─────────────────────────────────────────────────────────────────
 
 class PushCompositionIn(BaseModel):
@@ -140,9 +258,10 @@ async def send_push(
         if not user:
             raise HTTPException(status_code=404, detail=err("NOT_FOUND", "User not found"))
         tokens = [user["fcmToken"]] if user.get("fcmToken") else []
+        web_subs = [user["webPushSubscription"]] if user.get("webPushSubscription") else []
         users_count = 1
-        with_token_count = len(tokens)
-        without_token_count = 0 if tokens else 1
+        with_token_count = len(tokens) + len(web_subs)
+        without_token_count = 0 if (tokens or web_subs) else 1
 
         notification_doc = {
             "userId": str(user["_id"]),
@@ -162,13 +281,14 @@ async def send_push(
         # and push only to users that actually have a token.
         cursor = db.users.find(
             {"status": "APPROVED"},
-            {"_id": 1, "fcmToken": 1},
+            {"_id": 1, "fcmToken": 1, "webPushSubscription": 1},
         )
         users = await cursor.to_list(length=10000)
         users_count = len(users)
         tokens = [u["fcmToken"] for u in users if u.get("fcmToken")]
-        with_token_count = len(tokens)
-        without_token_count = users_count - with_token_count
+        web_subs = [u["webPushSubscription"] for u in users if u.get("webPushSubscription")]
+        with_token_count = len(tokens) + len(web_subs)
+        without_token_count = users_count - len([u for u in users if u.get("fcmToken") or u.get("webPushSubscription")])
 
         # Bulk insert notification docs for each user
         if users:
@@ -200,8 +320,19 @@ async def send_push(
         },
     )
 
+    await send_web_push(
+        web_subs,
+        body.title,
+        body.body,
+        image_url=body.imageUrl,
+        data={
+            "deepLink": body.deepLink or "",
+            "youtubeUrl": body.youtubeUrl or "",
+        },
+    )
+
     return ok({
-        "message": f"Notification sent to {len(tokens)} device(s)",
+        "message": f"Notification sent to {with_token_count} device(s) ({len(tokens)} FCM, {len(web_subs)} web)",
         "adminUserId": str(admin.get("_id")) if admin.get("_id") else None,
         "target": "single-user" if body.targetUserId else "broadcast",
         "approvedUsers": users_count,
@@ -226,6 +357,27 @@ async def admin_list_notifications(
 
 
 # ─── User routes ─────────────────────────────────────────────────────────────
+
+@router.post("/test")
+async def send_test_notification(
+    current_user: dict = Depends(get_current_user),
+    db: AsyncIOMotorDatabase = Depends(get_db),
+):
+    """Send a test notification to the current user.
+    
+    Useful for debugging and testing push notification setup.
+    """
+    await create_and_send_notification(
+        db,
+        str(current_user["_id"]),
+        title="Test Notification",
+        body="If you see this, push notifications are working! ✅",
+        image_url=None,
+        deep_link=None,
+        notification_type="TEST",
+    )
+    return ok({"message": "Test notification sent. Check your device/browser."})
+
 
 @router.get("")
 async def list_my_notifications(

@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 import { Platform } from "react-native";
 import { api } from "../lib/api";
 import { usePushNotifications } from "../hooks/usePushNotifications";
+import { useWebPushNotifications } from "../hooks/useWebPushNotifications";
 
 // expo-secure-store doesn't work on web — fall back to localStorage
 const store = {
@@ -44,7 +45,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   // Register for push notifications whenever a user is logged in
+  // Native push notifications (Android/iOS via Expo)
   usePushNotifications(user?.id);
+  // Web push notifications (Browser)
+  useWebPushNotifications(user?.id);
 
   useEffect(() => {
     (async () => {
