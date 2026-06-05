@@ -236,7 +236,8 @@ class PushCompositionIn(BaseModel):
     videoUrl: str | None = None
     youtubeUrl: str | None = None
     deepLink: str | None = None
-    targetUserId: str | None = None   # None = broadcast
+    targetUserId: str | None = None   # backwards-compatible single target
+    targetUserIds: list[str] | None = None   # preferred multi-target
 
 
 # ─── Admin routes ────────────────────────────────────────────────────────────
@@ -251,31 +252,45 @@ async def send_push(
     users_count = 0
     with_token_count = 0
     without_token_count = 0
+    tokens: list[str] = []
+    web_subs: list[dict] = []
 
-    if body.targetUserId:
-        # Targeted push
-        user = await db.users.find_one({"_id": ObjectId(body.targetUserId)})
-        if not user:
-            raise HTTPException(status_code=404, detail=err("NOT_FOUND", "User not found"))
-        tokens = [user["fcmToken"]] if user.get("fcmToken") else []
-        web_subs = [user["webPushSubscription"]] if user.get("webPushSubscription") else []
-        users_count = 1
+    target_ids = [uid for uid in (body.targetUserIds or []) if isinstance(uid, str) and uid.strip()]
+    if body.targetUserId and body.targetUserId not in target_ids:
+        target_ids.append(body.targetUserId)
+
+    if target_ids:
+        valid_oids = [ObjectId(uid) for uid in target_ids if ObjectId.is_valid(uid)]
+        users = await db.users.find(
+            {"_id": {"$in": valid_oids}},
+            {"_id": 1, "fcmToken": 1, "webPushSubscription": 1},
+        ).to_list(length=1000)
+        if not users:
+            raise HTTPException(status_code=404, detail=err("NOT_FOUND", "No target users found"))
+
+        users_count = len(users)
+        tokens = [u["fcmToken"] for u in users if u.get("fcmToken")]
+        web_subs = [u["webPushSubscription"] for u in users if u.get("webPushSubscription")]
         with_token_count = len(tokens) + len(web_subs)
-        without_token_count = 0 if (tokens or web_subs) else 1
+        without_token_count = users_count - len([u for u in users if u.get("fcmToken") or u.get("webPushSubscription")])
 
-        notification_doc = {
-            "userId": str(user["_id"]),
-            "title": body.title,
-            "body": body.body,
-            "imageUrl": body.imageUrl,
-            "videoUrl": body.videoUrl,
-            "youtubeUrl": body.youtubeUrl,
-            "deepLink": body.deepLink,
-            "type": "GENERAL",
-            "read": False,
-            "createdAt": now,
-        }
-        await db.notifications.insert_one(notification_doc)
+        notif_docs = [
+            {
+                "userId": str(u["_id"]),
+                "title": body.title,
+                "body": body.body,
+                "imageUrl": body.imageUrl,
+                "videoUrl": body.videoUrl,
+                "youtubeUrl": body.youtubeUrl,
+                "deepLink": body.deepLink,
+                "type": "GENERAL",
+                "read": False,
+                "createdAt": now,
+            }
+            for u in users
+        ]
+        if notif_docs:
+            await db.notifications.insert_many(notif_docs)
     else:
         # Broadcast: send in-app notifications to all approved users,
         # and push only to users that actually have a token.
@@ -334,7 +349,8 @@ async def send_push(
     return ok({
         "message": f"Notification sent to {with_token_count} device(s) ({len(tokens)} FCM, {len(web_subs)} web)",
         "adminUserId": str(admin.get("_id")) if admin.get("_id") else None,
-        "target": "single-user" if body.targetUserId else "broadcast",
+        "target": "selected-users" if target_ids else "broadcast",
+        "targetedUsers": len(target_ids),
         "approvedUsers": users_count,
         "usersWithToken": with_token_count,
         "usersWithoutToken": without_token_count,

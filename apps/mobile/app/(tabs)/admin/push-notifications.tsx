@@ -2,7 +2,7 @@
  * Admin: Push Notification Composer + History.
  * File: apps/mobile/app/admin/push-notifications.tsx
  */
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -19,6 +19,13 @@ import {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 
+type AdminUser = {
+  id: string;
+  fullName?: string;
+  email?: string;
+  status?: string;
+};
+
 export default function AdminPushNotificationsScreen() {
   const qc = useQueryClient();
   const [tab, setTab] = useState<"compose" | "history">("compose");
@@ -27,12 +34,35 @@ export default function AdminPushNotificationsScreen() {
   const [deepLink, setDeepLink] = useState("");
   const [sending, setSending] = useState(false);
   const [statusMsg, setStatusMsg] = useState("");
+  const [targetMode, setTargetMode] = useState<"broadcast" | "selected">("broadcast");
+  const [selectedUserIds, setSelectedUserIds] = useState<Set<string>>(new Set());
+  const [userSearch, setUserSearch] = useState("");
 
   const { data: history, isLoading: histLoading } = useQuery({
     queryKey: ["admin-notifications"],
     queryFn: () => api.get("/admin/notifications?limit=50").then((r) => r.data.data?.items ?? []),
     enabled: tab === "history",
   });
+
+  const { data: users = [], isLoading: usersLoading } = useQuery<AdminUser[]>({
+    queryKey: ["admin-notification-users"],
+    queryFn: () =>
+      api
+        .get("/users?status=APPROVED&limit=100")
+        .then((r) => r.data.data?.items ?? []),
+    enabled: tab === "compose",
+    staleTime: 60_000,
+  });
+
+  const filteredUsers = useMemo(() => {
+    const q = userSearch.trim().toLowerCase();
+    if (!q) return users;
+    return users.filter((u) => {
+      const name = (u.fullName ?? "").toLowerCase();
+      const email = (u.email ?? "").toLowerCase();
+      return name.includes(q) || email.includes(q);
+    });
+  }, [users, userSearch]);
 
   const deleteNotification = useMutation({
     mutationFn: (id: string) => api.delete(`/admin/notifications/${id}`),
@@ -52,24 +82,31 @@ export default function AdminPushNotificationsScreen() {
     setSending(true);
     setStatusMsg("Sending...");
     try {
-      console.log("📤 Sending push notification:", { title, body, deepLink });
+      const targetUserIds = targetMode === "selected" ? Array.from(selectedUserIds) : undefined;
+      console.log("📤 Sending push notification:", { title, body, deepLink, targetMode, targetUserIds });
       const response = await api.post("/admin/notifications/push", {
         title: title.trim(),
         body: body.trim(),
         deepLink: deepLink.trim() || undefined,
+        targetUserIds,
       });
       console.log("✅ Push sent successfully:", response.data);
       const payload = response.data?.data || {};
-      const msg = payload?.message || "Notification broadcasted to all users.";
+      const msg = payload?.message || "Notification sent.";
       const approvedUsers = payload?.approvedUsers ?? 0;
       const usersWithToken = payload?.usersWithToken ?? 0;
       const usersWithoutToken = payload?.usersWithoutToken ?? 0;
-      const details = `Approved users: ${approvedUsers}\nWith token: ${usersWithToken}\nWithout token: ${usersWithoutToken}`;
+      const targetedUsers = payload?.targetedUsers ?? 0;
+      const details =
+        targetMode === "selected"
+          ? `Selected users: ${targetedUsers}\nWith token: ${usersWithToken}\nWithout token: ${usersWithoutToken}`
+          : `Approved users: ${approvedUsers}\nWith token: ${usersWithToken}\nWithout token: ${usersWithoutToken}`;
       setStatusMsg(`✅ ${msg}\n${details}`);
       Alert.alert("Success", `${msg}\n\n${details}`);
       setTitle("");
       setBody("");
       setDeepLink("");
+      setSelectedUserIds(new Set());
       qc.invalidateQueries({ queryKey: ["admin-notifications"] });
     } catch (e: any) {
       console.error("❌ Push send failed:", {
@@ -91,20 +128,39 @@ export default function AdminPushNotificationsScreen() {
       return;
     }
 
+    if (targetMode === "selected" && selectedUserIds.size === 0) {
+      Alert.alert("Validation", "Select at least one user.");
+      return;
+    }
+
+    const targetSummary =
+      targetMode === "selected"
+        ? `Send to ${selectedUserIds.size} selected user(s)?`
+        : "Broadcast to all users?";
+
     if (Platform.OS === "web") {
-      const confirmed = window.confirm(`Broadcast to all users?\n\n"${title}"\n${body}`);
+      const confirmed = window.confirm(`${targetSummary}\n\n"${title}"\n${body}`);
       if (!confirmed) return;
       await doSendPush();
       return;
     }
 
-    Alert.alert("Send Push", `Broadcast to all users?\n\n"${title}"\n${body}`, [
+    Alert.alert("Send Push", `${targetSummary}\n\n"${title}"\n${body}`, [
       { text: "Cancel" },
       {
         text: "Send",
         onPress: doSendPush,
       },
     ]);
+  }
+
+  function toggleUserSelection(userId: string) {
+    setSelectedUserIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(userId)) next.delete(userId);
+      else next.add(userId);
+      return next;
+    });
   }
 
   async function testConnection() {
@@ -213,13 +269,74 @@ export default function AdminPushNotificationsScreen() {
             autoCapitalize="none"
           />
 
-          <Text style={styles.hint}>📡 This will be sent to ALL registered users with notifications enabled.</Text>
+          <Text style={styles.label}>Target Audience</Text>
+          <View style={styles.targetModeRow}>
+            <Pressable
+              style={[styles.targetModeBtn, targetMode === "broadcast" && styles.targetModeBtnActive]}
+              onPress={() => setTargetMode("broadcast")}
+            >
+              <Text style={[styles.targetModeText, targetMode === "broadcast" && styles.targetModeTextActive]}>
+                Broadcast
+              </Text>
+            </Pressable>
+            <Pressable
+              style={[styles.targetModeBtn, targetMode === "selected" && styles.targetModeBtnActive]}
+              onPress={() => setTargetMode("selected")}
+            >
+              <Text style={[styles.targetModeText, targetMode === "selected" && styles.targetModeTextActive]}>
+                Selected Users
+              </Text>
+            </Pressable>
+          </View>
+
+          {targetMode === "selected" && (
+            <View style={styles.userSelectWrap}>
+              <TextInput
+                style={styles.input}
+                value={userSearch}
+                onChangeText={setUserSearch}
+                placeholder="Search user by name/email"
+                placeholderTextColor="#9ca3af"
+              />
+              <Text style={styles.selectedCount}>Selected: {selectedUserIds.size}</Text>
+
+              {usersLoading ? (
+                <ActivityIndicator size="small" color="#1a56db" style={{ marginTop: 8 }} />
+              ) : (
+                <View style={styles.userListBox}>
+                  {filteredUsers.slice(0, 50).map((u) => {
+                    const selected = selectedUserIds.has(u.id);
+                    return (
+                      <Pressable key={u.id} style={styles.userRow} onPress={() => toggleUserSelection(u.id)}>
+                        <View style={[styles.checkbox, selected && styles.checkboxChecked]} />
+                        <View style={{ flex: 1 }}>
+                          <Text style={styles.userName}>{u.fullName || "Unnamed"}</Text>
+                          <Text style={styles.userEmail}>{u.email || "-"}</Text>
+                        </View>
+                      </Pressable>
+                    );
+                  })}
+                  {filteredUsers.length === 0 && <Text style={styles.emptyUsers}>No users found.</Text>}
+                </View>
+              )}
+            </View>
+          )}
+
+          <Text style={styles.hint}>
+            {targetMode === "selected"
+              ? "📡 This will be sent only to selected users."
+              : "📡 This will be sent to ALL registered users with notifications enabled."}
+          </Text>
 
           <Pressable style={[styles.sendBtn, sending && styles.disabled]} onPress={handleSend} disabled={sending}>
             {sending ? (
               <ActivityIndicator color="#fff" />
             ) : (
-              <Text style={styles.sendBtnText}>🔔 Broadcast to All Users</Text>
+              <Text style={styles.sendBtnText}>
+                {targetMode === "selected"
+                  ? `🔔 Send to Selected (${selectedUserIds.size})`
+                  : "🔔 Broadcast to All Users"}
+              </Text>
             )}
           </Pressable>
         </ScrollView>
@@ -280,6 +397,55 @@ const styles = StyleSheet.create({
   label: { fontSize: 14, fontWeight: "600", color: "#374151", marginBottom: 6, marginTop: 14 },
   input: { backgroundColor: "#fff", borderWidth: 1, borderColor: "#d1d5db", borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12, fontSize: 15, color: "#111827" },
   textarea: { height: 110 },
+  targetModeRow: { flexDirection: "row", gap: 10, marginTop: 8 },
+  targetModeBtn: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: "#d1d5db",
+    borderRadius: 8,
+    paddingVertical: 10,
+    alignItems: "center",
+    backgroundColor: "#fff",
+  },
+  targetModeBtnActive: {
+    borderColor: "#1a56db",
+    backgroundColor: "#eff6ff",
+  },
+  targetModeText: { color: "#6b7280", fontSize: 13, fontWeight: "600" },
+  targetModeTextActive: { color: "#1a56db" },
+  userSelectWrap: { marginTop: 10 },
+  selectedCount: { marginTop: 8, fontSize: 12, color: "#374151", fontWeight: "600" },
+  userListBox: {
+    marginTop: 8,
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
+    borderRadius: 8,
+    backgroundColor: "#fff",
+    maxHeight: 220,
+    paddingVertical: 4,
+  },
+  userRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    gap: 8,
+  },
+  checkbox: {
+    width: 16,
+    height: 16,
+    borderRadius: 4,
+    borderWidth: 1.5,
+    borderColor: "#9ca3af",
+    backgroundColor: "#fff",
+  },
+  checkboxChecked: {
+    borderColor: "#1a56db",
+    backgroundColor: "#1a56db",
+  },
+  userName: { fontSize: 13, fontWeight: "600", color: "#111827" },
+  userEmail: { fontSize: 12, color: "#6b7280" },
+  emptyUsers: { textAlign: "center", color: "#9ca3af", paddingVertical: 12 },
   hint: { fontSize: 13, color: "#6b7280", marginTop: 16, lineHeight: 20 },
   sendBtn: { backgroundColor: "#1a56db", borderRadius: 12, paddingVertical: 16, alignItems: "center", marginTop: 24 },
   sendBtnText: { color: "#fff", fontSize: 16, fontWeight: "700" },
