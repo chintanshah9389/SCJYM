@@ -165,13 +165,22 @@ async def get_product(
     product_id: str,
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
+    product = None
+    
+    # Try to find by ObjectId first
     try:
         oid = ObjectId(product_id)
+        product = await db.products.find_one({"_id": oid})
     except Exception:
-        raise HTTPException(status_code=400, detail=err("INVALID_ID", "Invalid product id"))
-    product = await db.products.find_one({"_id": oid})
+        pass
+    
+    # If not found, try to find by productCode (for custom IDs like "dummy-p-1")
+    if not product:
+        product = await db.products.find_one({"productCode": product_id})
+    
     if not product:
         raise HTTPException(status_code=404, detail=err("NOT_FOUND", "Product not found"))
+    
     return ok(serialize_doc(product))
 
 
@@ -265,6 +274,16 @@ async def upload_product_images(
     is_admin = current_user.get("role") in ("ADMIN", "SUPER_ADMIN")
     if not is_owner and not is_admin:
         raise HTTPException(status_code=403, detail=err("FORBIDDEN", "Not allowed"))
+
+    existing_count = len(product.get("images", []))
+    if existing_count + len(files) > 5:
+        raise HTTPException(
+            status_code=400,
+            detail=err(
+                "TOO_MANY_FILES",
+                f"Product already has {existing_count} image(s). Max 5 total allowed.",
+            ),
+        )
 
     uploaded_urls: list[str] = []
     for f in files:

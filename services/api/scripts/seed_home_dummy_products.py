@@ -1,4 +1,4 @@
-"""Seed script: insert 5 approved dummy products for home page.
+ """Seed script: insert 5 approved dummy products for home page.
 
 Run from services/api:
     python -m scripts.seed_home_dummy_products
@@ -122,6 +122,7 @@ async def seed_home_dummy_products() -> None:
             "price": product["price"],
             "inventory": product["inventory"],
             "images": product["images"],
+            "productCode": f"dummy-p-{i+1}",
             "ownerId": owner_id,
             "status": "APPROVED",
             "avgRating": 4.4,

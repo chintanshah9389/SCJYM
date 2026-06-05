@@ -2,12 +2,13 @@
  * Product Detail Page — Display full product information with images
  * File: apps/mobile/app/(tabs)/product/[id].tsx
  */
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import {
   View,
   Text,
   Image,
   ScrollView,
+  FlatList,
   StyleSheet,
   TouchableOpacity,
   ActivityIndicator,
@@ -15,7 +16,12 @@ import {
   TextInput,
   SafeAreaView,
   Platform,
+  Dimensions,
+  NativeSyntheticEvent,
+  NativeScrollEvent,
 } from "react-native";
+
+const SCREEN_WIDTH = Dimensions.get("window").width;
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
@@ -26,7 +32,7 @@ interface Product {
   description?: string;
   price: number;
   category: string;
-  images?: Array<{ url: string; altText?: string }>;
+  images?: string[];
   avgRating?: number;
   ratingCount?: number;
   stock?: number;
@@ -41,6 +47,7 @@ export default function ProductDetailScreen() {
   const { id } = useLocalSearchParams();
   const [quantity, setQuantity] = useState(1);
   const [activeImageIdx, setActiveImageIdx] = useState(0);
+  const carouselRef = useRef<FlatList>(null);
 
   const { data: product, isLoading, error } = useQuery<Product>({
     queryKey: ["product", id],
@@ -85,11 +92,20 @@ export default function ProductDetailScreen() {
     );
   }
 
-  const images = product.images && product.images.length > 0
-    ? product.images
-    : [{ url: "https://via.placeholder.com/400x400?text=No+Image" }];
+  const images: string[] =
+    product.images && product.images.length > 0
+      ? product.images
+      : ["https://via.placeholder.com/400x400?text=No+Image"];
 
-  const activeImage = images[activeImageIdx];
+  const onCarouselScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const idx = Math.round(e.nativeEvent.contentOffset.x / SCREEN_WIDTH);
+    setActiveImageIdx(idx);
+  };
+
+  const goToImage = (idx: number) => {
+    setActiveImageIdx(idx);
+    carouselRef.current?.scrollToIndex({ index: idx, animated: true });
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -101,26 +117,53 @@ export default function ProductDetailScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Image Gallery */}
+        {/* Image Carousel */}
         <View style={styles.gallerySection}>
-          <Image
-            source={{ uri: activeImage.url }}
-            style={styles.mainImage}
-            resizeMode="cover"
+          <FlatList
+            ref={carouselRef}
+            data={images}
+            keyExtractor={(_, idx) => String(idx)}
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            onMomentumScrollEnd={onCarouselScroll}
+            getItemLayout={(_, index) => ({
+              length: SCREEN_WIDTH - 32,
+              offset: (SCREEN_WIDTH - 32) * index,
+              index,
+            })}
+            renderItem={({ item }) => (
+              <Image
+                source={{ uri: item }}
+                style={styles.mainImage}
+                resizeMode="cover"
+              />
+            )}
           />
+          {/* Dot indicators */}
+          {images.length > 1 && (
+            <View style={styles.dotsRow}>
+              {images.map((_, idx) => (
+                <TouchableOpacity key={idx} onPress={() => goToImage(idx)}>
+                  <View style={[styles.dot, activeImageIdx === idx && styles.dotActive]} />
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
+          {/* Thumbnail strip */}
           {images.length > 1 && (
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.thumbnailRow}
             >
-              {images.map((img, idx) => (
+              {images.map((uri, idx) => (
                 <TouchableOpacity
                   key={idx}
                   style={[styles.thumbnail, activeImageIdx === idx && styles.thumbnailActive]}
-                  onPress={() => setActiveImageIdx(idx)}
+                  onPress={() => goToImage(idx)}
                 >
-                  <Image source={{ uri: img.url }} style={styles.thumbnailImage} />
+                  <Image source={{ uri }} style={styles.thumbnailImage} />
                 </TouchableOpacity>
               ))}
             </ScrollView>
@@ -223,7 +266,10 @@ const styles = StyleSheet.create({
 
   /* Gallery */
   gallerySection: { paddingHorizontal: 16, marginBottom: 24 },
-  mainImage: { width: "100%", height: 320, borderRadius: 16, backgroundColor: "#e5e7eb" },
+  mainImage: { width: SCREEN_WIDTH - 32, height: 320, borderRadius: 16, backgroundColor: "#e5e7eb" },
+  dotsRow: { flexDirection: "row", justifyContent: "center", gap: 6, marginTop: 10 },
+  dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: "#d1d5db" },
+  dotActive: { backgroundColor: "#1a56db", width: 20, borderRadius: 4 },
   thumbnailRow: { paddingVertical: 12, gap: 8 },
   thumbnail: { width: 60, height: 60, borderRadius: 8, borderWidth: 2, borderColor: "#e5e7eb", overflow: "hidden" },
   thumbnailActive: { borderColor: "#1a56db" },

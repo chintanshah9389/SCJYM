@@ -25,6 +25,7 @@ DUMMY_PRODUCTS = [
         "tags": ["protein", "fitness", "supplement"],
         "price": 2399.0,
         "inventory": 120,
+        "productCode": "dummy-p-1",
         "images": [{"url": "https://images.unsplash.com/photo-1590080876614-bc8a2f703e57?w=400&h=400&fit=crop"}],
     },
     {
@@ -34,6 +35,7 @@ DUMMY_PRODUCTS = [
         "tags": ["dumbbell", "gym", "strength"],
         "price": 3299.0,
         "inventory": 80,
+        "productCode": "dummy-p-2",
         "images": [{"url": "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=400&h=400&fit=crop"}],
     },
     {
@@ -43,6 +45,7 @@ DUMMY_PRODUCTS = [
         "tags": ["bands", "workout", "home-gym"],
         "price": 799.0,
         "inventory": 260,
+        "productCode": "dummy-p-3",
         "images": [{"url": "https://images.unsplash.com/photo-1609899753513-1f8b2f3c7a08?w=400&h=400&fit=crop"}],
     },
     {
@@ -52,6 +55,7 @@ DUMMY_PRODUCTS = [
         "tags": ["yoga", "mat", "wellness"],
         "price": 999.0,
         "inventory": 210,
+        "productCode": "dummy-p-4",
         "images": [{"url": "https://images.unsplash.com/photo-1601925260368-ae2f83cf8b7f?w=400&h=400&fit=crop"}],
     },
     {
@@ -61,6 +65,7 @@ DUMMY_PRODUCTS = [
         "tags": ["shaker", "bottle", "gym-accessory"],
         "price": 349.0,
         "inventory": 400,
+        "productCode": "dummy-p-5",
         "images": [{"url": "https://images.unsplash.com/photo-1602143407151-7111542de6e8?w=400&h=400&fit=crop"}],
     },
 ]

@@ -7,6 +7,7 @@ import {
   TextInput,
   TouchableOpacity,
   ActivityIndicator,
+  Image,
 } from "react-native";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
@@ -48,9 +49,18 @@ export default function ProductsScreen() {
               style={styles.card}
               onPress={() => router.push({ pathname: "/(tabs)/product/[id]" as any, params: { id: item.id } })}
             >
-              <Text style={styles.title}>{item.title}</Text>
-              <Text style={styles.price}>₹{item.price}</Text>
-              <Text style={styles.rating}>★ {item.avgRating?.toFixed(1)} ({item.ratingCount} reviews)</Text>
+              {item.images && item.images.length > 0 ? (
+                <Image source={{ uri: item.images[0] }} style={styles.cardImage} resizeMode="cover" />
+              ) : (
+                <View style={[styles.cardImage, styles.cardImagePlaceholder]}>
+                  <Text style={styles.cardImagePlaceholderText}>No Image</Text>
+                </View>
+              )}
+              <View style={styles.cardBody}>
+                <Text style={styles.title}>{item.title}</Text>
+                <Text style={styles.price}>₹{item.price}</Text>
+                <Text style={styles.rating}>★ {item.avgRating?.toFixed(1)} ({item.ratingCount} reviews)</Text>
+              </View>
             </TouchableOpacity>
           )}
           ListEmptyComponent={<Text style={styles.empty}>No products found.</Text>}
@@ -86,9 +96,13 @@ const styles = StyleSheet.create({
     marginHorizontal: 12,
     marginBottom: 10,
     borderRadius: 10,
-    padding: 14,
+    overflow: "hidden",
     elevation: 2,
   },
+  cardImage: { width: "100%", height: 180 },
+  cardImagePlaceholder: { backgroundColor: "#e5e7eb", alignItems: "center", justifyContent: "center" },
+  cardImagePlaceholderText: { color: "#9ca3af", fontSize: 13 },
+  cardBody: { padding: 14 },
   title: { fontSize: 16, fontWeight: "600", color: "#111827" },
   price: { fontSize: 14, color: "#1a56db", marginTop: 4, fontWeight: "600" },
   rating: { fontSize: 12, color: "#6b7280", marginTop: 4 },
