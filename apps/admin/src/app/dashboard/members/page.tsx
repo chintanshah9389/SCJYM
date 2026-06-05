@@ -241,7 +241,6 @@ export default function MembersPage() {
               onChange={(e) => setNewPassword(e.target.value)}
             />
             <div className="flex justify-end gap-2 mt-4">
-              <button onClick={closePwdModal} className="px-4 py-2 border rounded">Cancel</button>
               <button onClick={submitPasswordUpdate} disabled={!newPassword || pwdLoading} className="px-4 py-2 bg-blue-600 text-white rounded">{pwdLoading ? "Updating..." : "Update Password"}</button>
             </div>
           </div>
@@ -279,8 +278,7 @@ export default function MembersPage() {
             </div>
 
             <div className="flex justify-end gap-2 mt-4">
-              <button onClick={closeMemberModal} className="px-4 py-2 border rounded">Cancel</button>
-              <button onClick={submitMemberForm} disabled={memberLoading} className="px-4 py-2 bg-blue-600 text-white rounded">{memberLoading ? "Saving..." : memberMode === "create" ? "Create" : "Save"}</button>
+              <button onClick={submitMemberForm} disabled={memberLoading} className="px-4 py-2 bg-blue-600 text-white rounded">{memberLoading ? "Updating..." : memberMode === "create" ? "Create" : "Update Member"}</button>
             </div>
           </div>
         </div>
