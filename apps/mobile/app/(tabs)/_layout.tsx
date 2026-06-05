@@ -134,6 +134,10 @@ export default function TabsLayout() {
           name="admin/advertisements"
           options={{ href: null, title: "Advertisements", headerLeft: hamburger }}
         />
+        <Tabs.Screen
+          name="admin/receipt-maker"
+          options={{ href: null, title: "Receipt Maker", headerLeft: hamburger }}
+        />
         {/* Members sub-pages (hidden) */}
         <Tabs.Screen name="members/create" options={{ href: null, title: "Create Member", headerLeft: hamburger }} />
         <Tabs.Screen name="members/[id]/edit" options={{ href: null, title: "Edit Member", headerLeft: hamburger }} />
