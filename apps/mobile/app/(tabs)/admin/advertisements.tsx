@@ -8,6 +8,7 @@ import {
   Alert,
   Image,
   Modal,
+  Platform,
   ScrollView,
   StyleSheet,
   Switch,
@@ -17,6 +18,7 @@ import {
   View,
 } from "react-native";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import * as ImagePicker from "expo-image-picker";
 import { api } from "@/lib/api";
 
 const MEDIA_TYPES = ["IMAGE", "VIDEO", "YOUTUBE"];
@@ -56,6 +58,7 @@ export default function AdvertisementsScreen() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState({ ...EMPTY_FORM });
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   const { data: ads = [], isLoading } = useQuery<Ad[]>({
     queryKey: ["admin-ads"],
@@ -83,6 +86,41 @@ export default function AdvertisementsScreen() {
       badgeColor: ad.badgeColor ?? "#ef4444",
     });
     setModalVisible(true);
+  }
+
+  async function handlePickImage() {
+    setUploading(true);
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [16, 9],
+        quality: 0.9,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        const asset = result.assets[0];
+        const formData = new FormData();
+        const filename = asset.uri.split("/").pop() || "ad-image.jpg";
+        formData.append("file", {
+          uri: Platform.OS === "android" ? asset.uri : asset.uri.replace("file://", ""),
+          type: asset.type || "image/jpeg",
+          name: filename,
+        } as any);
+
+        const response = await api.post("/upload", formData, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+        if (response.data?.data?.url) {
+          setForm((f) => ({ ...f, mediaUrl: response.data.data.url }));
+          Alert.alert("Success", "Image uploaded successfully");
+        }
+      }
+    } catch (e: any) {
+      Alert.alert("Error", e?.response?.data?.error?.message ?? "Upload failed");
+    } finally {
+      setUploading(false);
+    }
   }
 
   async function handleSave() {
@@ -219,7 +257,12 @@ export default function AdvertisementsScreen() {
             <TextInput style={styles.input} value={form.subtitle} onChangeText={(v) => setForm((f) => ({ ...f, subtitle: v }))} placeholder="Short description" />
 
             <Label>Media URL *</Label>
-            <TextInput style={styles.input} value={form.mediaUrl} onChangeText={(v) => setForm((f) => ({ ...f, mediaUrl: v }))} placeholder="https://..." autoCapitalize="none" />
+            <View style={styles.mediaInputRow}>
+              <TextInput style={[styles.input, styles.mediaInputField]} value={form.mediaUrl} onChangeText={(v) => setForm((f) => ({ ...f, mediaUrl: v }))} placeholder="https://..." autoCapitalize="none" />
+              <TouchableOpacity style={styles.uploadMediaBtn} onPress={handlePickImage} disabled={uploading}>
+                <Text style={styles.uploadMediaBtnText}>{uploading ? "↻" : "📷"}</Text>
+              </TouchableOpacity>
+            </View>
 
             {/* Media type chips */}
             <Label>Media Type</Label>
@@ -320,6 +363,10 @@ const styles = StyleSheet.create({
   chipActive: { borderColor: "#1a56db", backgroundColor: "#eff6ff" },
   chipText: { fontSize: 13, color: "#6b7280", fontWeight: "500" },
   chipTextActive: { color: "#1a56db", fontWeight: "700" },
+  mediaInputRow: { flexDirection: "row", gap: 8, alignItems: "center" },
+  mediaInputField: { flex: 1 },
+  uploadMediaBtn: { backgroundColor: "#f3f4f6", borderRadius: 9, width: 45, height: 45, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: "#e5e7eb" },
+  uploadMediaBtnText: { fontSize: 20 },
   switchRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 16, marginBottom: 8 },
   switchLabel: { fontSize: 14, fontWeight: "600", color: "#374151" },
   saveBtn: { backgroundColor: "#1a56db", borderRadius: 10, padding: 14, alignItems: "center", marginTop: 20 },
