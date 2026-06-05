@@ -23,7 +23,6 @@ const ADMIN_LINKS = [
   { label: "📣 Advertisements", href: "/admin/advertisements", color: "#f59e0b" },
   { label: "💬 Moderation", href: "/admin/moderation", color: "#7c3aed" },
   { label: "🔔 Push Notifications", href: "/admin/push-notifications", color: "#d97706" },
-  { label: "🧾 Receipt Maker", href: "/admin/receipt-maker", color: "#10b981" },
   { label: "📋 Menu Manager", href: "/admin/menu-manager", color: "#0891b2" },
   { label: "⭐ Ranking Config", href: "/admin/ranking-config", color: "#dc2626" },
   { label: "👥 All Members", href: "/(tabs)/members", color: "#374151" },
