@@ -7,6 +7,29 @@ import { useAuth } from "../../context/AuthContext";
 import AdCarousel from "../../components/AdCarousel";
 import NotifCarousel from "../../components/NotifCarousel";
 
+const DUMMY_BEST_SELLERS = [
+  {
+    rank: 1,
+    product: { id: "dummy-p-1", title: "Whey Protein Isolate 1kg", price: 2399, avgRating: 4.7, ratingCount: 128 },
+  },
+  {
+    rank: 2,
+    product: { id: "dummy-p-2", title: "Adjustable Steel Dumbbell Set", price: 3299, avgRating: 4.5, ratingCount: 96 },
+  },
+  {
+    rank: 3,
+    product: { id: "dummy-p-3", title: "Resistance Bands Combo (Set of 5)", price: 799, avgRating: 4.6, ratingCount: 143 },
+  },
+  {
+    rank: 4,
+    product: { id: "dummy-p-4", title: "Yoga Mat Pro 8mm", price: 999, avgRating: 4.4, ratingCount: 87 },
+  },
+  {
+    rank: 5,
+    product: { id: "dummy-p-5", title: "Gym Shaker + Bottle Pack", price: 349, avgRating: 4.3, ratingCount: 65 },
+  },
+];
+
 export default function HomeScreen() {
   const router = useRouter();
   const { user } = useAuth();
@@ -35,6 +58,8 @@ export default function HomeScreen() {
     queryKey: ["menu"],
     queryFn: () => api.get("/menu").then((r) => r.data.data ?? []),
   });
+
+  const homeBestSellers: any[] = bestSellers?.length ? bestSellers : DUMMY_BEST_SELLERS;
 
   function ProductCard({ item, rank }: { item: any; rank?: number }) {
     const p = item.product ?? item;
@@ -110,8 +135,8 @@ export default function HomeScreen() {
       {/* Global best sellers */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>🔥 Best Sellers</Text>
-        {bestSellers?.map((item: any) => (
-          <ProductCard key={item.product?.id} item={item} rank={item.rank} />
+        {homeBestSellers.slice(0, 5).map((item: any, idx: number) => (
+          <ProductCard key={item.product?.id ?? item.id ?? `dummy-${idx}`} item={item} rank={item.rank} />
         ))}
       </View>
     </ScrollView>

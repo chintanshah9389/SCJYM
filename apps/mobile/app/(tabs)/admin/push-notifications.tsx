@@ -14,8 +14,9 @@ import {
   Text,
   TextInput,
   View,
+  TouchableOpacity,
 } from "react-native";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 
 export default function AdminPushNotificationsScreen() {
@@ -31,6 +32,20 @@ export default function AdminPushNotificationsScreen() {
     queryKey: ["admin-notifications"],
     queryFn: () => api.get("/admin/notifications?limit=50").then((r) => r.data.data?.items ?? []),
     enabled: tab === "history",
+  });
+
+  const deleteNotification = useMutation({
+    mutationFn: (id: string) => api.delete(`/admin/notifications/${id}`),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin-notifications"] });
+    },
+  });
+
+  const deleteAllNotifications = useMutation({
+    mutationFn: () => api.delete("/admin/notifications"),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin-notifications"] });
+    },
   });
 
   async function doSendPush() {
@@ -107,6 +122,42 @@ export default function AdminPushNotificationsScreen() {
     }
   }
 
+  function confirmDelete(id: string) {
+    if (Platform.OS === "web") {
+      const ok = window.confirm("Delete this notification permanently?");
+      if (!ok) return;
+      deleteNotification.mutate(id);
+      return;
+    }
+
+    Alert.alert("Delete Notification", "Delete this notification permanently?", [
+      { text: "Cancel" },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: () => deleteNotification.mutate(id),
+      },
+    ]);
+  }
+
+  function confirmDeleteAll() {
+    if (Platform.OS === "web") {
+      const ok = window.confirm("Delete all notification history permanently?");
+      if (!ok) return;
+      deleteAllNotifications.mutate();
+      return;
+    }
+
+    Alert.alert("Delete All Notifications", "Delete all notification history permanently?", [
+      { text: "Cancel" },
+      {
+        text: "Delete All",
+        style: "destructive",
+        onPress: () => deleteAllNotifications.mutate(),
+      },
+    ]);
+  }
+
   return (
     <View style={styles.container}>
       {/* Tab switcher */}
@@ -173,23 +224,42 @@ export default function AdminPushNotificationsScreen() {
           </Pressable>
         </ScrollView>
       ) : (
-        histLoading ? (
-          <ActivityIndicator size="large" color="#1a56db" style={{ marginTop: 40 }} />
-        ) : (
-          <FlatList
-            data={history ?? []}
-            keyExtractor={(n) => n.id}
-            contentContainerStyle={{ padding: 12 }}
-            ListEmptyComponent={<Text style={styles.empty}>No notifications sent yet.</Text>}
-            renderItem={({ item: n }) => (
-              <View style={styles.histCard}>
-                <Text style={styles.notifTitle}>{n.title}</Text>
-                <Text style={styles.notifBody}>{n.body}</Text>
-                <Text style={styles.notifDate}>{new Date(n.createdAt).toLocaleString()}</Text>
-              </View>
-            )}
-          />
-        )
+        <View style={{ flex: 1 }}>
+          <View style={styles.historyActions}>
+            <Pressable
+              style={[styles.clearAllBtn, deleteAllNotifications.isPending && styles.disabled]}
+              onPress={confirmDeleteAll}
+              disabled={deleteAllNotifications.isPending}
+            >
+              <Text style={styles.clearAllBtnText}>Delete All History</Text>
+            </Pressable>
+          </View>
+
+          {histLoading ? (
+            <ActivityIndicator size="large" color="#1a56db" style={{ marginTop: 40 }} />
+          ) : (
+            <FlatList
+              data={history ?? []}
+              keyExtractor={(n) => n.id}
+              contentContainerStyle={{ padding: 12 }}
+              ListEmptyComponent={<Text style={styles.empty}>No notifications sent yet.</Text>}
+              renderItem={({ item: n }) => (
+                <View style={styles.histCard}>
+                  <TouchableOpacity
+                    style={styles.deleteBtn}
+                    onPress={() => confirmDelete(n.id)}
+                    disabled={deleteNotification.isPending}
+                  >
+                    <Text style={styles.deleteBtnText}>Delete</Text>
+                  </TouchableOpacity>
+                  <Text style={styles.notifTitle}>{n.title}</Text>
+                  <Text style={styles.notifBody}>{n.body}</Text>
+                  <Text style={styles.notifDate}>{new Date(n.createdAt).toLocaleString()}</Text>
+                </View>
+              )}
+            />
+          )}
+        </View>
       )}
     </View>
   );
@@ -214,9 +284,39 @@ const styles = StyleSheet.create({
   sendBtn: { backgroundColor: "#1a56db", borderRadius: 12, paddingVertical: 16, alignItems: "center", marginTop: 24 },
   sendBtnText: { color: "#fff", fontSize: 16, fontWeight: "700" },
   disabled: { opacity: 0.6 },
+  historyActions: {
+    paddingHorizontal: 12,
+    paddingTop: 10,
+    alignItems: "flex-end",
+  },
+  clearAllBtn: {
+    backgroundColor: "#991b1b",
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+  },
+  clearAllBtnText: {
+    color: "#fff",
+    fontSize: 12,
+    fontWeight: "700",
+  },
   empty: { textAlign: "center", marginTop: 60, color: "#9ca3af", fontSize: 15 },
-  histCard: { backgroundColor: "#fff", borderRadius: 10, padding: 14, marginBottom: 10, elevation: 1 },
+  histCard: { backgroundColor: "#fff", borderRadius: 10, padding: 14, marginBottom: 10, elevation: 1, position: "relative" },
   notifTitle: { fontSize: 15, fontWeight: "700", color: "#111827", marginBottom: 4 },
   notifBody: { fontSize: 13, color: "#374151", marginBottom: 6 },
   notifDate: { fontSize: 12, color: "#9ca3af" },
+  deleteBtn: {
+    position: "absolute",
+    top: 10,
+    right: 10,
+    backgroundColor: "#fee2e2",
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  deleteBtnText: {
+    color: "#b91c1c",
+    fontSize: 12,
+    fontWeight: "700",
+  },
 });

@@ -3,8 +3,9 @@
  * Shows unread/recent notifications as swipable cards below the ad carousel.
  * Only renders when there are notifications to show.
  */
-import React from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -34,10 +35,42 @@ const TYPE_ICONS: Record<string, string> = {
   BROADCAST: "📣",
 };
 
+const HOME_DISMISSED_KEY_PREFIX = "homeDismissedNotifications";
+
+async function getStoredDismissedIds(userId: string): Promise<string[]> {
+  const key = `${HOME_DISMISSED_KEY_PREFIX}:${userId}`;
+  try {
+    if (Platform.OS === "web") {
+      const raw = (window as any).localStorage.getItem(key);
+      const parsed = raw ? JSON.parse(raw) : [];
+      return Array.isArray(parsed) ? parsed : [];
+    }
+    const { getItemAsync } = await import("expo-secure-store");
+    const raw = await getItemAsync(key);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+async function storeDismissedIds(userId: string, ids: string[]): Promise<void> {
+  const key = `${HOME_DISMISSED_KEY_PREFIX}:${userId}`;
+  const payload = JSON.stringify(ids);
+  if (Platform.OS === "web") {
+    (window as any).localStorage.setItem(key, payload);
+    return;
+  }
+  const { setItemAsync } = await import("expo-secure-store");
+  await setItemAsync(key, payload);
+}
+
 export default function NotifCarousel() {
   const router = useRouter();
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const [dismissedIds, setDismissedIds] = useState<Set<string>>(new Set());
+  const [dismissedReady, setDismissedReady] = useState(false);
 
   const { data: notifications = [] } = useQuery({
     queryKey: ["notif-carousel"],
@@ -47,13 +80,62 @@ export default function NotifCarousel() {
     staleTime: 30_000,
   });
 
-  if (!user || notifications.length === 0) return null;
+  useEffect(() => {
+    let alive = true;
+    if (!user?.id) {
+      setDismissedIds(new Set());
+      setDismissedReady(true);
+      return;
+    }
 
-  const unread = notifications.filter((n: any) => !(n.read ?? n.isRead));
-  const display = unread.length > 0 ? unread : notifications.slice(0, 5);
+    setDismissedReady(false);
+    getStoredDismissedIds(user.id)
+      .then((ids) => {
+        if (!alive) return;
+        setDismissedIds(new Set(ids));
+      })
+      .finally(() => {
+        if (!alive) return;
+        setDismissedReady(true);
+      });
+
+    return () => {
+      alive = false;
+    };
+  }, [user?.id]);
+
+  const unread = useMemo(
+    () =>
+      notifications.filter(
+        (n: any) => !(n.read ?? n.isRead) && !dismissedIds.has(n.id)
+      ),
+    [notifications, dismissedIds]
+  );
+
+  if (!user || !dismissedReady) return null;
+  if (unread.length === 0) return null;
+
+  const display = unread.slice(0, 5);
+
+  async function dismissFromHome(id: string) {
+    if (!user?.id) return;
+
+    const next = new Set(dismissedIds);
+    next.add(id);
+    setDismissedIds(next);
+    await storeDismissedIds(user.id, Array.from(next));
+  }
 
   async function markAllRead() {
     await api.patch("/notifications/read-all").catch(() => {});
+    setDismissedIds((prev) => {
+      const next = new Set(prev);
+      unread.forEach((n: any) => next.add(n.id));
+      if (user?.id) {
+        void storeDismissedIds(user.id, Array.from(next));
+      }
+      return next;
+    });
     queryClient.invalidateQueries({ queryKey: ["notif-carousel"] });
   }
 
@@ -82,19 +164,31 @@ export default function NotifCarousel() {
           const color = TYPE_COLORS[n.type] ?? "#1a56db";
           const icon = TYPE_ICONS[n.type] ?? "📌";
           return (
-            <TouchableOpacity
+            <View
               key={n.id}
-              style={[styles.card, !n.isRead && styles.cardUnread, { borderLeftColor: color }]}
-              onPress={() => router.push("/notifications" as any)}
-              activeOpacity={0.8}
+              style={[styles.card, styles.cardUnread, { borderLeftColor: color }]}
             >
-              <Text style={styles.cardIcon}>{icon}</Text>
-              <View style={styles.cardBody}>
-                <Text style={styles.cardTitle} numberOfLines={1}>{n.title}</Text>
-                <Text style={styles.cardMsg} numberOfLines={2}>{n.body}</Text>
-              </View>
-              {!(n.read ?? n.isRead) && <View style={[styles.unreadDot, { backgroundColor: color }]} />}
-            </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.cardPressArea}
+                onPress={() => router.push("/notifications" as any)}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.cardIcon}>{icon}</Text>
+                <View style={styles.cardBody}>
+                  <Text style={styles.cardTitle} numberOfLines={1}>{n.title}</Text>
+                  <Text style={styles.cardMsg} numberOfLines={2}>{n.body}</Text>
+                </View>
+                {!(n.read ?? n.isRead) && <View style={[styles.unreadDot, { backgroundColor: color }]} />}
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.dismissBtn}
+                onPress={() => dismissFromHome(n.id)}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
+                <Text style={styles.dismissText}>x</Text>
+              </TouchableOpacity>
+            </View>
           );
         })}
       </ScrollView>
@@ -123,11 +217,9 @@ const styles = StyleSheet.create({
   seeAll: { fontSize: 13, color: "#1a56db", fontWeight: "600" },
   scroll: { paddingHorizontal: 16, gap: 10 },
   card: {
-    flexDirection: "row",
-    alignItems: "flex-start",
     backgroundColor: "#fff",
     borderRadius: 12,
-    padding: 12,
+    padding: 0,
     width: 220,
     borderLeftWidth: 4,
     shadowColor: "#000",
@@ -135,7 +227,13 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.06,
     shadowRadius: 4,
     elevation: 2,
+  },
+  cardPressArea: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    padding: 12,
     gap: 8,
+    minHeight: 84,
   },
   cardUnread: { backgroundColor: "#f0f9ff" },
   cardIcon: { fontSize: 20, marginTop: 1 },
@@ -147,5 +245,22 @@ const styles = StyleSheet.create({
     height: 8,
     borderRadius: 4,
     marginTop: 4,
+  },
+  dismissBtn: {
+    position: "absolute",
+    top: 6,
+    right: 8,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: "#f3f4f6",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  dismissText: {
+    fontSize: 12,
+    color: "#6b7280",
+    fontWeight: "700",
+    lineHeight: 14,
   },
 });
