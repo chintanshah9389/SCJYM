@@ -37,6 +37,7 @@ class ProductIn(BaseModel):
     price: float = Field(..., ge=0)
     inventory: int = Field(..., ge=0)
     productCode: Optional[str] = Field(None, min_length=3, max_length=64)
+    images: list[str] = Field(default_factory=list, max_length=5)
 
 
 class ProductUpdateIn(BaseModel):
@@ -81,6 +82,7 @@ def _product_filter(
 
 def _new_product_doc(body: ProductIn, owner_id: str) -> dict:
     now = datetime.now(tz=timezone.utc)
+    images = [img.strip() for img in body.images if isinstance(img, str) and img.strip()]
     return {
         "title": body.title,
         "description": body.description,
@@ -88,7 +90,7 @@ def _new_product_doc(body: ProductIn, owner_id: str) -> dict:
         "tags": body.tags,
         "price": body.price,
         "inventory": body.inventory,
-        "images": [],
+        "images": images[:5],
         "status": "DRAFT",
         "ownerId": owner_id,
         "avgRating": 0.0,

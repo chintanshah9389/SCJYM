@@ -53,6 +53,7 @@ const ADMIN_LINKS: NavLink[] = [
   { label: "Menu Manager", icon: "📋", href: "/admin/menu-manager", adminOnly: true },
   { label: "Notification Push", icon: "🔔", href: "/admin/push-notifications", adminOnly: true },
   { label: "Ranking Config", icon: "⭐", href: "/admin/ranking-config", adminOnly: true },
+  { label: "Receipt Maker", icon: "🧾", href: "/admin/receipt-maker", adminOnly: true },
 ];
 
 export default function DrawerMenu({ visible, onClose }: DrawerMenuProps) {
