@@ -63,9 +63,14 @@ export default function LoginScreen() {
       {/* Card */}
       <KeyboardAvoidingView
         style={styles.cardWrapper}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "android" ? (StatusBar.currentHeight ?? 0) : 0}
       >
-        <ScrollView contentContainerStyle={styles.card} keyboardShouldPersistTaps="handled">
+        <ScrollView
+          contentContainerStyle={styles.card}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
+        >
           <Text style={styles.cardTitle}>Welcome back</Text>
           <Text style={styles.cardSubtitle}>Sign in to continue</Text>
 

@@ -356,6 +356,31 @@ async def admin_list_notifications(
     return ok(paginate_response(serialize_list(docs), page, limit, total))
 
 
+@admin_router.delete("/{notification_id}")
+async def admin_delete_notification(
+    notification_id: str,
+    _admin: dict = Depends(require_admin),
+    db: AsyncIOMotorDatabase = Depends(get_db),
+):
+    if not ObjectId.is_valid(notification_id):
+        raise HTTPException(status_code=400, detail=err("INVALID_ID", "Invalid notification id"))
+
+    result = await db.notifications.delete_one({"_id": ObjectId(notification_id)})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail=err("NOT_FOUND", "Notification not found"))
+
+    return ok({"message": "Notification deleted"})
+
+
+@admin_router.delete("")
+async def admin_delete_all_notifications(
+    _admin: dict = Depends(require_admin),
+    db: AsyncIOMotorDatabase = Depends(get_db),
+):
+    result = await db.notifications.delete_many({})
+    return ok({"message": f"Deleted {result.deleted_count} notification(s)"})
+
+
 # ─── User routes ─────────────────────────────────────────────────────────────
 
 @router.post("/test")

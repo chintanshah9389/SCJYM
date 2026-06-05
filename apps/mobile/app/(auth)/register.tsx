@@ -74,9 +74,14 @@ export default function RegisterScreen() {
   return (
     <KeyboardAvoidingView
       style={{ flex: 1, backgroundColor: "#fff" }}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={Platform.OS === "android" ? 24 : 0}
     >
-      <ScrollView contentContainerStyle={styles.container}>
+      <ScrollView
+        contentContainerStyle={styles.container}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
+      >
         <Text style={styles.title}>Create Account</Text>
         {fields.map(([key, placeholder, kbType, secure, autoCapitalize]) => (
           <TextInput
@@ -108,7 +113,7 @@ export default function RegisterScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flexGrow: 1, padding: 24, paddingTop: 48 },
+  container: { flexGrow: 1, padding: 24, paddingTop: 48, paddingBottom: 32 },
   title: { fontSize: 28, fontWeight: "bold", color: "#1a56db", marginBottom: 24 },
   input: {
     borderWidth: 1,
