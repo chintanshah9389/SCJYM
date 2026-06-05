@@ -16,7 +16,7 @@
     "infra:up": "docker compose -f infra/docker-compose.yml up -d",
     "infra:down": "docker compose -f infra/docker-compose.yml down",
     "shared:build": "yarn workspace @scjygm/shared build",
-    "postinstall": "node scripts/patch-expo-router-ctx.cjs"
+    "postinstall": "node scripts/patch-expo-router-ctx.cjs && node scripts/patch-expo-sharing-tsconfig.cjs"
   },
   "overrides": {
     "react": "19.1.0",
@@ -35,5 +35,8 @@
     "babel-preset-expo": "^54.0.0",
     "react": "19.1.0",
     "react-dom": "19.1.0"
+  },
+  "devDependencies": {
+    "expo-module-scripts": "^56.0.3"
   }
 }

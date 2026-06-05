@@ -19,6 +19,7 @@ import {
   Share,
 } from "react-native";
 import * as Print from "expo-print";
+import * as Sharing from "expo-sharing";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { brand, ui, shadows } from "@/lib/theme";
@@ -208,11 +209,24 @@ ${"═".repeat(40)}
 
       const { uri } = await Print.printToFileAsync({ html });
 
-      await Share.share({
-        title: `Receipt ${receiptNum}`,
-        message: `Receipt ${receiptNum}`,
-        url: uri,
-      } as any);
+      if (Platform.OS === "web") {
+        await Share.share({
+          title: `Receipt ${receiptNum}`,
+          message: `Receipt ${receiptNum}`,
+          url: uri,
+        } as any);
+      } else {
+        const canShare = await Sharing.isAvailableAsync();
+        if (!canShare) {
+          throw new Error("Native sharing is not available on this device");
+        }
+
+        await Sharing.shareAsync(uri, {
+          mimeType: "application/pdf",
+          dialogTitle: `Share Receipt ${receiptNum}`,
+          UTI: "com.adobe.pdf",
+        });
+      }
 
       if (selectedUserIds.size > 0) {
         const targetUserIds = Array.from(selectedUserIds);
