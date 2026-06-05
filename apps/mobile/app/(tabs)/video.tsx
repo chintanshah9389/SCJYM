@@ -1,7 +1,8 @@
 import React from "react";
-import { View, StyleSheet } from "react-native";
+import { View, StyleSheet, Text, ActivityIndicator } from "react-native";
 import { WebView } from "react-native-webview";
 import { useLocalSearchParams } from "expo-router";
+import { brand } from "../../lib/theme";
 
 export default function VideoScreen() {
   const { url } = useLocalSearchParams<{ url: string }>();
@@ -15,6 +16,14 @@ export default function VideoScreen() {
     return rawUrl;
   }
 
+  if (!url) {
+    return (
+      <View style={styles.emptyContainer}>
+        <Text style={styles.emptyText}>No video URL provided.</Text>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
       <WebView
@@ -22,12 +31,32 @@ export default function VideoScreen() {
         allowsFullscreenVideo
         mediaPlaybackRequiresUserAction={false}
         style={styles.webview}
+        startInLoadingState
+        renderLoading={() => (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator color="#fff" size="large" />
+          </View>
+        )}
       />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#000" },
+  container: { flex: 1, backgroundColor: brand.base },
   webview: { flex: 1 },
+  loadingContainer: {
+    flex: 1,
+    backgroundColor: brand.base,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  emptyContainer: {
+    flex: 1,
+    backgroundColor: brand.base,
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 24,
+  },
+  emptyText: { color: "#fff", fontSize: 15, fontWeight: "700" },
 });

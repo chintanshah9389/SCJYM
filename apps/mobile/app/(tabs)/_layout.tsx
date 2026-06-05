@@ -2,8 +2,10 @@ import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
 import { TouchableOpacity, View, Text, StyleSheet } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { useAuth } from "../../context/AuthContext";
 import DrawerMenu from "../../components/DrawerMenu";
+import { brand, ui, shadows } from "../../lib/theme";
 
 function HamburgerButton({ onPress }: { onPress: () => void }) {
   return (
@@ -22,16 +24,39 @@ export default function TabsLayout() {
 
   const hamburger = () => <HamburgerButton onPress={() => setDrawerOpen(true)} />;
 
+  const gradientHeader = () => (
+    <LinearGradient
+      colors={brand.gradients.header}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+      style={StyleSheet.absoluteFillObject}
+    />
+  );
+
+  const gradientTabBar = () => (
+    <LinearGradient
+      colors={brand.gradients.tabBar}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+      style={StyleSheet.absoluteFillObject}
+    />
+  );
+
   return (
     <>
       <DrawerMenu visible={drawerOpen} onClose={() => setDrawerOpen(false)} />
       <Tabs
         screenOptions={{
-          tabBarActiveTintColor: "#1a56db",
+          tabBarActiveTintColor: brand.base,
+          tabBarInactiveTintColor: "#b88b92",
+          tabBarStyle: styles.tabBar,
+          tabBarLabelStyle: styles.tabLabel,
+          tabBarBackground: gradientTabBar,
           headerShown: true,
-          headerStyle: { backgroundColor: "#1a56db" },
-          headerTintColor: "#fff",
-          headerTitleStyle: { fontWeight: "700", fontSize: 18 },
+          headerStyle: styles.header,
+          headerBackground: gradientHeader,
+          headerTintColor: ui.card,
+          headerTitleStyle: styles.headerTitle,
         }}
       >
         {/* ── Visible tabs ─────────────────────────────── */}
@@ -148,7 +173,46 @@ export default function TabsLayout() {
 }
 
 const styles = StyleSheet.create({
+  header: {
+    backgroundColor: "transparent",
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
+    ...shadows.soft,
+  },
+  headerTitle: {
+    fontWeight: "800",
+    fontSize: 18,
+    letterSpacing: 0.3,
+  },
+  tabBar: {
+    position: "absolute",
+    left: 14,
+    right: 14,
+    bottom: 12,
+    height: 66,
+    borderRadius: 22,
+    paddingBottom: 8,
+    paddingTop: 8,
+    backgroundColor: "transparent",
+    borderWidth: 1,
+    borderColor: "#f7dfe3",
+    borderTopWidth: 0,
+    ...shadows.card,
+  },
+  tabLabel: {
+    fontSize: 11,
+    fontWeight: "700",
+    letterSpacing: 0.2,
+  },
   hamburger: { paddingHorizontal: 16, paddingVertical: 8, gap: 4, alignItems: "flex-start" },
-  bar: { width: 22, height: 2.5, backgroundColor: "#fff", borderRadius: 2 },
-  notifBtn: { paddingHorizontal: 16 },
+  bar: { width: 22, height: 2.5, backgroundColor: ui.card, borderRadius: 2 },
+  notifBtn: {
+    marginRight: 12,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(231,96,120,0.92)",
+  },
 });

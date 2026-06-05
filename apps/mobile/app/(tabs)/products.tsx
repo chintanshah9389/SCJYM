@@ -12,6 +12,7 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { api } from "../../lib/api";
+import { brand, ui, shadows } from "../../lib/theme";
 
 export default function ProductsScreen() {
   const router = useRouter();
@@ -34,12 +35,13 @@ export default function ProductsScreen() {
       <TextInput
         style={styles.search}
         placeholder="Search products..."
+        placeholderTextColor="#8ea0d2"
         value={search}
         onChangeText={(v) => { setSearch(v); setPage(1); }}
       />
 
       {isLoading ? (
-        <ActivityIndicator size="large" color="#1a56db" style={{ marginTop: 40 }} />
+        <ActivityIndicator size="large" color={brand.base} style={{ marginTop: 40 }} />
       ) : (
         <FlatList
           data={products}
@@ -81,34 +83,40 @@ export default function ProductsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f9fafb" },
+  container: { flex: 1, backgroundColor: ui.pageBg },
   search: {
-    margin: 12,
+    marginHorizontal: 12,
+    marginTop: 12,
+    marginBottom: 10,
     borderWidth: 1,
-    borderColor: "#d1d5db",
-    borderRadius: 8,
-    padding: 10,
-    backgroundColor: "#fff",
+    borderColor: ui.border,
+    borderRadius: 14,
+    padding: 12,
+    backgroundColor: ui.card,
     fontSize: 15,
+    color: ui.text,
+    ...shadows.soft,
   },
   card: {
-    backgroundColor: "#fff",
+    backgroundColor: ui.card,
     marginHorizontal: 12,
-    marginBottom: 10,
-    borderRadius: 10,
+    marginBottom: 12,
+    borderRadius: 14,
     overflow: "hidden",
-    elevation: 2,
+    borderWidth: 1,
+    borderColor: ui.border,
+    ...shadows.card,
   },
   cardImage: { width: "100%", height: 180 },
-  cardImagePlaceholder: { backgroundColor: "#e5e7eb", alignItems: "center", justifyContent: "center" },
-  cardImagePlaceholderText: { color: "#9ca3af", fontSize: 13 },
+  cardImagePlaceholder: { backgroundColor: "#e8eeff", alignItems: "center", justifyContent: "center" },
+  cardImagePlaceholderText: { color: "#8093c4", fontSize: 13, fontWeight: "600" },
   cardBody: { padding: 14 },
-  title: { fontSize: 16, fontWeight: "600", color: "#111827" },
-  price: { fontSize: 14, color: "#1a56db", marginTop: 4, fontWeight: "600" },
-  rating: { fontSize: 12, color: "#6b7280", marginTop: 4 },
-  empty: { textAlign: "center", marginTop: 40, color: "#9ca3af" },
+  title: { fontSize: 16, fontWeight: "700", color: ui.text },
+  price: { fontSize: 15, color: brand.base, marginTop: 6, fontWeight: "800" },
+  rating: { fontSize: 12, color: ui.textMuted, marginTop: 4 },
+  empty: { textAlign: "center", marginTop: 40, color: ui.textMuted },
   pagination: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", padding: 12 },
-  pageBtn: { color: "#1a56db", fontSize: 16, fontWeight: "600" },
-  disabled: { color: "#d1d5db" },
-  pageInfo: { color: "#6b7280", fontSize: 14 },
+  pageBtn: { color: brand.base, fontSize: 16, fontWeight: "700" },
+  disabled: { color: "#b5c1e0" },
+  pageInfo: { color: ui.textMuted, fontSize: 14, fontWeight: "600" },
 });

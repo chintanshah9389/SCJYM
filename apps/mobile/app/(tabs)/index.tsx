@@ -1,11 +1,14 @@
 import React from "react";
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { api } from "../../lib/api";
 import { useAuth } from "../../context/AuthContext";
 import AdCarousel from "../../components/AdCarousel";
 import NotifCarousel from "../../components/NotifCarousel";
+import { brand, ui, shadows } from "../../lib/theme";
+import BrandMark from "../../components/BrandMark";
 
 const DUMMY_BEST_SELLERS = [
   {
@@ -89,6 +92,20 @@ export default function HomeScreen() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      <LinearGradient
+        colors={brand.gradients.hero}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.heroWrap}
+      >
+        <View style={styles.heroFoldA} />
+        <View style={styles.heroFoldB} />
+        <View style={styles.heroFoldAccent} />
+        <BrandMark size={54} light style={styles.heroMark} />
+        <Text style={styles.heroEyebrow}>SCJYGM</Text>
+        <Text style={styles.heroTitle}>Built around your training journey</Text>
+        <Text style={styles.heroSub}>Discover trending gear, member picks, and personalized recommendations.</Text>
+      </LinearGradient>
 
       {/* ── Ad Carousel ────────────────────────────────────── */}
       <AdCarousel />
@@ -144,45 +161,112 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f9fafb" },
-  content: { paddingTop: 16, paddingHorizontal: 0, paddingBottom: 32 },
+  container: { flex: 1, backgroundColor: ui.pageBg },
+  content: { paddingTop: 12, paddingHorizontal: 0, paddingBottom: 94 },
+  heroWrap: {
+    marginHorizontal: 16,
+    marginBottom: 14,
+    borderRadius: 18,
+    backgroundColor: "#0f172a",
+    paddingVertical: 18,
+    paddingHorizontal: 16,
+    overflow: "hidden",
+    position: "relative",
+    ...shadows.card,
+  },
+  heroFoldA: {
+    position: "absolute",
+    width: 110,
+    height: 110,
+    borderRadius: 16,
+    backgroundColor: "rgba(255,255,255,0.08)",
+    right: 28,
+    top: -22,
+    transform: [{ rotate: "30deg" }],
+  },
+  heroFoldB: {
+    position: "absolute",
+    width: 84,
+    height: 84,
+    borderRadius: 14,
+    backgroundColor: "rgba(255,255,255,0.12)",
+    right: 70,
+    top: 20,
+    transform: [{ rotate: "-22deg" }],
+  },
+  heroFoldAccent: {
+    position: "absolute",
+    width: 30,
+    height: 30,
+    borderRadius: 8,
+    backgroundColor: "rgba(227,27,63,0.9)",
+    right: 38,
+    top: 24,
+    transform: [{ rotate: "45deg" }],
+  },
+  heroMark: {
+    position: "absolute",
+    right: 14,
+    bottom: 12,
+    opacity: 0.9,
+  },
+  heroEyebrow: {
+    color: "rgba(255,255,255,0.78)",
+    fontSize: 11,
+    letterSpacing: 1,
+    fontWeight: "700",
+    textTransform: "uppercase",
+  },
+  heroTitle: {
+    marginTop: 6,
+    fontSize: 21,
+    lineHeight: 26,
+    color: "#fff",
+    fontWeight: "800",
+  },
+  heroSub: {
+    marginTop: 7,
+    color: "rgba(255,255,255,0.9)",
+    fontSize: 13,
+    lineHeight: 18,
+  },
   section: { marginBottom: 24, paddingHorizontal: 16 },
-  sectionTitle: { fontSize: 18, fontWeight: "600", marginBottom: 12, color: "#111827" },
+  sectionTitle: { fontSize: 19, fontWeight: "800", marginBottom: 12, color: ui.text },
   menuChip: {
-    backgroundColor: "#1a56db",
-    borderRadius: 20,
+    backgroundColor: brand.base,
+    borderRadius: 999,
     paddingHorizontal: 14,
     paddingVertical: 8,
-    marginRight: 8,
+    marginRight: 10,
+    ...shadows.soft,
   },
-  menuChipText: { color: "#fff", fontSize: 13, fontWeight: "500" },
+  menuChipText: { color: "#fff", fontSize: 13, fontWeight: "700", letterSpacing: 0.2 },
   productCard: {
-    backgroundColor: "#fff",
-    borderRadius: 12,
+    backgroundColor: ui.card,
+    borderRadius: 16,
     padding: 16,
     marginBottom: 12,
-    shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+    borderWidth: 1,
+    borderColor: ui.border,
+    ...shadows.card,
   },
   hCard: { width: 180, marginRight: 12 },
   rank: {
     fontSize: 11,
-    color: "#9ca3af",
+    color: ui.textMuted,
     fontWeight: "700",
     marginBottom: 4,
   },
   exploreBadge: {
     alignSelf: "flex-start",
-    backgroundColor: "#fef3c7",
+    backgroundColor: brand.tint,
     borderRadius: 8,
     paddingHorizontal: 6,
     paddingVertical: 2,
     marginBottom: 4,
   },
-  exploreBadgeText: { fontSize: 10, color: "#92400e", fontWeight: "600" },
-  productTitle: { fontSize: 15, fontWeight: "600", color: "#111827", marginBottom: 4 },
-  productPrice: { fontSize: 14, color: "#1a56db", fontWeight: "600" },
-  productRating: { fontSize: 12, color: "#6b7280", marginTop: 4 },
+  exploreBadgeText: { fontSize: 10, color: brand.deep, fontWeight: "700" },
+  productTitle: { fontSize: 15, fontWeight: "700", color: ui.text, marginBottom: 4 },
+  productPrice: { fontSize: 15, color: brand.base, fontWeight: "800" },
+  productRating: { fontSize: 12, color: ui.textMuted, marginTop: 4 },
 });

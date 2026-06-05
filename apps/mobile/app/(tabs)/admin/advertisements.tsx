@@ -20,6 +20,7 @@ import {
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import * as ImagePicker from "expo-image-picker";
 import { api } from "@/lib/api";
+import { brand, ui, shadows } from "@/lib/theme";
 
 const MEDIA_TYPES = ["IMAGE", "VIDEO", "YOUTUBE"];
 const LINK_TYPES = ["NONE", "SCREEN_ROUTE", "WEB_URL"];
@@ -180,7 +181,7 @@ export default function AdvertisementsScreen() {
       </View>
 
       {isLoading ? (
-        <ActivityIndicator color="#1a56db" style={{ marginTop: 40 }} />
+        <ActivityIndicator color={brand.base} style={{ marginTop: 40 }} />
       ) : (
         <ScrollView contentContainerStyle={styles.list}>
           {ads.length === 0 && (
@@ -220,7 +221,7 @@ export default function AdvertisementsScreen() {
                     <Switch
                       value={ad.isActive}
                       onValueChange={() => handleToggle(ad)}
-                      trackColor={{ true: "#1a56db", false: "#d1d5db" }}
+                      trackColor={{ true: brand.base, false: "#d1d5db" }}
                       thumbColor="#fff"
                     />
                   </View>
@@ -304,7 +305,7 @@ export default function AdvertisementsScreen() {
 
             <View style={styles.switchRow}>
               <Text style={styles.switchLabel}>Active</Text>
-              <Switch value={form.isActive} onValueChange={(v) => setForm((f) => ({ ...f, isActive: v }))} trackColor={{ true: "#1a56db", false: "#d1d5db" }} thumbColor="#fff" />
+              <Switch value={form.isActive} onValueChange={(v) => setForm((f) => ({ ...f, isActive: v }))} trackColor={{ true: brand.base, false: "#d1d5db" }} thumbColor="#fff" />
             </View>
 
             <TouchableOpacity style={[styles.saveBtn, saving && { opacity: 0.7 }]} onPress={handleSave} disabled={saving}>
@@ -322,53 +323,53 @@ function Label({ children }: { children: string }) {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: "#f9fafb" },
-  topBar: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", padding: 16, backgroundColor: "#fff", borderBottomWidth: 1, borderBottomColor: "#e5e7eb" },
-  topBarTitle: { fontSize: 16, fontWeight: "700", color: "#111827" },
-  addBtn: { backgroundColor: "#1a56db", borderRadius: 8, paddingHorizontal: 16, paddingVertical: 8 },
+  root: { flex: 1, backgroundColor: ui.pageBg },
+  topBar: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", padding: 16, backgroundColor: ui.card, borderBottomWidth: 1, borderBottomColor: ui.border },
+  topBarTitle: { fontSize: 16, fontWeight: "700", color: ui.text },
+  addBtn: { backgroundColor: brand.base, borderRadius: 10, paddingHorizontal: 16, paddingVertical: 8, ...shadows.soft },
   addBtnText: { color: "#fff", fontWeight: "600", fontSize: 14 },
   list: { padding: 16, gap: 12 },
-  empty: { color: "#9ca3af", textAlign: "center", marginTop: 40, fontSize: 14 },
-  card: { backgroundColor: "#fff", borderRadius: 12, overflow: "hidden", flexDirection: "row", gap: 12, padding: 12, elevation: 2, shadowColor: "#000", shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 2 } },
+  empty: { color: ui.textMuted, textAlign: "center", marginTop: 40, fontSize: 14 },
+  card: { backgroundColor: ui.card, borderRadius: 14, overflow: "hidden", flexDirection: "row", gap: 12, padding: 12, borderWidth: 1, borderColor: ui.border, ...shadows.card },
   cardInactive: { opacity: 0.55 },
-  thumb: { width: 80, height: 80, borderRadius: 8, backgroundColor: "#f3f4f6" },
+  thumb: { width: 80, height: 80, borderRadius: 8, backgroundColor: "#eef2ff" },
   thumbPlaceholder: { alignItems: "center", justifyContent: "center" },
   thumbIcon: { fontSize: 28 },
   cardBody: { flex: 1 },
   cardRow: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 2 },
-  cardTitle: { flex: 1, fontSize: 15, fontWeight: "700", color: "#111827" },
+  cardTitle: { flex: 1, fontSize: 15, fontWeight: "700", color: ui.text },
   badge: { borderRadius: 5, paddingHorizontal: 6, paddingVertical: 2 },
   badgeText: { color: "#fff", fontSize: 10, fontWeight: "700" },
-  cardSubtitle: { fontSize: 13, color: "#6b7280", marginBottom: 2 },
-  cardMeta: { fontSize: 11, color: "#9ca3af", marginBottom: 2 },
-  cardLink: { fontSize: 11, color: "#1a56db", marginBottom: 6 },
+  cardSubtitle: { fontSize: 13, color: ui.textMuted, marginBottom: 2 },
+  cardMeta: { fontSize: 11, color: "#94a3b8", marginBottom: 2 },
+  cardLink: { fontSize: 11, color: brand.base, marginBottom: 6 },
   cardActions: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 6 },
   toggleRow: { flexDirection: "row", alignItems: "center", gap: 6 },
-  toggleLabel: { fontSize: 12, color: "#6b7280" },
+  toggleLabel: { fontSize: 12, color: ui.textMuted },
   btnRow: { flexDirection: "row", gap: 8 },
-  editBtn: { backgroundColor: "#eff6ff", borderRadius: 6, paddingHorizontal: 10, paddingVertical: 5 },
-  editBtnText: { color: "#1a56db", fontSize: 12, fontWeight: "600" },
+  editBtn: { backgroundColor: "#eff6ff", borderRadius: 8, paddingHorizontal: 10, paddingVertical: 5 },
+  editBtnText: { color: brand.base, fontSize: 12, fontWeight: "700" },
   deleteBtn: { backgroundColor: "#fef2f2", borderRadius: 6, paddingHorizontal: 10, paddingVertical: 5 },
   deleteBtnText: { color: "#ef4444", fontSize: 12, fontWeight: "600" },
   // Modal
-  modal: { flex: 1, backgroundColor: "#fff" },
-  modalHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", padding: 20, borderBottomWidth: 1, borderBottomColor: "#e5e7eb" },
-  modalTitle: { fontSize: 18, fontWeight: "700", color: "#111827" },
+  modal: { flex: 1, backgroundColor: ui.card },
+  modalHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", padding: 20, borderBottomWidth: 1, borderBottomColor: ui.border },
+  modalTitle: { fontSize: 18, fontWeight: "700", color: ui.text },
   modalClose: { fontSize: 20, color: "#9ca3af" },
   modalBody: { padding: 20, gap: 4, paddingBottom: 40 },
-  label: { fontSize: 13, fontWeight: "600", color: "#374151", marginTop: 12, marginBottom: 4 },
-  input: { borderWidth: 1.5, borderColor: "#e5e7eb", borderRadius: 9, padding: 11, fontSize: 14, color: "#111827", backgroundColor: "#f9fafb" },
+  label: { fontSize: 13, fontWeight: "600", color: "#334155", marginTop: 12, marginBottom: 4 },
+  input: { borderWidth: 1.5, borderColor: ui.border, borderRadius: 10, padding: 11, fontSize: 14, color: ui.text, backgroundColor: "#f8faff" },
   chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 4 },
-  chip: { borderWidth: 1.5, borderColor: "#e5e7eb", borderRadius: 20, paddingHorizontal: 14, paddingVertical: 6 },
-  chipActive: { borderColor: "#1a56db", backgroundColor: "#eff6ff" },
-  chipText: { fontSize: 13, color: "#6b7280", fontWeight: "500" },
-  chipTextActive: { color: "#1a56db", fontWeight: "700" },
+  chip: { borderWidth: 1.5, borderColor: ui.border, borderRadius: 20, paddingHorizontal: 14, paddingVertical: 6, backgroundColor: ui.card },
+  chipActive: { borderColor: brand.base, backgroundColor: "#eff6ff" },
+  chipText: { fontSize: 13, color: ui.textMuted, fontWeight: "500" },
+  chipTextActive: { color: brand.base, fontWeight: "700" },
   mediaInputRow: { flexDirection: "row", gap: 8, alignItems: "center" },
   mediaInputField: { flex: 1 },
-  uploadMediaBtn: { backgroundColor: "#f3f4f6", borderRadius: 9, width: 45, height: 45, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: "#e5e7eb" },
+  uploadMediaBtn: { backgroundColor: "#eef2ff", borderRadius: 9, width: 45, height: 45, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: ui.border },
   uploadMediaBtnText: { fontSize: 20 },
   switchRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 16, marginBottom: 8 },
-  switchLabel: { fontSize: 14, fontWeight: "600", color: "#374151" },
-  saveBtn: { backgroundColor: "#1a56db", borderRadius: 10, padding: 14, alignItems: "center", marginTop: 20 },
+  switchLabel: { fontSize: 14, fontWeight: "600", color: "#334155" },
+  saveBtn: { backgroundColor: brand.base, borderRadius: 10, padding: 14, alignItems: "center", marginTop: 20, ...shadows.soft },
   saveBtnText: { color: "#fff", fontSize: 16, fontWeight: "700" },
 });

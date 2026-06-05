@@ -4,6 +4,7 @@ import { api } from "@/lib/api";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "../../context/AuthContext";
+import { brand, ui, shadows } from "../../lib/theme";
 
 export default function CreateMemberPage() {
   const router = useRouter();
@@ -45,7 +46,10 @@ export default function CreateMemberPage() {
   return (
     <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={{ flex: 1 }}>
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-        <Text style={styles.title}>Create Member</Text>
+        <View style={styles.hero}>
+          <Text style={styles.title}>Create Member</Text>
+          <Text style={styles.subtitle}>Add a new member profile with role and approval status.</Text>
+        </View>
 
         <Text style={styles.label}>Full name</Text>
         <TextInput style={styles.input} value={form.fullName} onChangeText={(v) => setForm((s:any) => ({ ...s, fullName: v }))} placeholder="Full name" />
@@ -80,7 +84,7 @@ export default function CreateMemberPage() {
             <Text>Cancel</Text>
           </TouchableOpacity>
           <TouchableOpacity onPress={submit} style={{ padding: 10 }}>
-            <Text style={{ color: "#1a56db" }}>{loading ? "Creating..." : "Create"}</Text>
+            <Text style={{ color: brand.base, fontWeight: "700" }}>{loading ? "Creating..." : "Create"}</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -89,8 +93,17 @@ export default function CreateMemberPage() {
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 16, backgroundColor: "#f9fafb", flexGrow: 1 },
-  title: { fontSize: 20, fontWeight: "700", marginBottom: 12 },
-  label: { color: "#374151", marginTop: 8, marginBottom: 6, fontWeight: "600" },
-  input: { backgroundColor: "#fff", borderWidth: 1, borderColor: "#e5e7eb", padding: 10, borderRadius: 8, marginBottom: 6 },
+  container: { padding: 16, backgroundColor: ui.pageBg, flexGrow: 1, paddingBottom: 40 },
+  hero: {
+    backgroundColor: brand.base,
+    borderRadius: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    marginBottom: 12,
+    ...shadows.card,
+  },
+  title: { fontSize: 22, fontWeight: "800", marginBottom: 4, color: "#fff" },
+  subtitle: { color: "rgba(255,255,255,0.86)", fontSize: 12 },
+  label: { color: "#334155", marginTop: 8, marginBottom: 6, fontWeight: "700" },
+  input: { backgroundColor: ui.card, borderWidth: 1, borderColor: ui.border, padding: 10, borderRadius: 10, marginBottom: 6, color: ui.text },
 });

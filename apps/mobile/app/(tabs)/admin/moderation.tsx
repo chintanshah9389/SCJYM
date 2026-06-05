@@ -14,6 +14,7 @@ import {
 } from "react-native";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
+import { brand, ui, shadows } from "@/lib/theme";
 
 const STATUS_COLOR: Record<string, string> = {
   PENDING: "#d97706",
@@ -72,7 +73,7 @@ export default function ModerationScreen() {
       </View>
 
       {isLoading ? (
-        <ActivityIndicator size="large" color="#1a56db" style={{ marginTop: 40 }} />
+        <ActivityIndicator size="large" color={brand.base} style={{ marginTop: 40 }} />
       ) : (
         <FlatList
           data={comments}
@@ -123,27 +124,27 @@ export default function ModerationScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f9fafb" },
+  container: { flex: 1, backgroundColor: ui.pageBg },
   filterRow: { flexDirection: "row", padding: 12, gap: 8 },
-  filterChip: { borderWidth: 1, borderColor: "#d1d5db", borderRadius: 20, paddingHorizontal: 14, paddingVertical: 6, backgroundColor: "#fff" },
-  filterChipActive: { backgroundColor: "#1a56db", borderColor: "#1a56db" },
-  filterChipText: { fontSize: 13, color: "#374151", fontWeight: "600" },
+  filterChip: { borderWidth: 1, borderColor: ui.border, borderRadius: 20, paddingHorizontal: 14, paddingVertical: 6, backgroundColor: ui.card },
+  filterChipActive: { backgroundColor: brand.base, borderColor: brand.base },
+  filterChipText: { fontSize: 13, color: "#334155", fontWeight: "700" },
   filterChipTextActive: { color: "#fff" },
-  card: { backgroundColor: "#fff", borderRadius: 12, padding: 14, marginBottom: 12, elevation: 2 },
+  card: { backgroundColor: ui.card, borderRadius: 14, padding: 14, marginBottom: 12, borderWidth: 1, borderColor: ui.border, ...shadows.card },
   cardTop: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 6 },
-  user: { fontSize: 14, fontWeight: "700", color: "#111827" },
+  user: { fontSize: 14, fontWeight: "700", color: ui.text },
   badge: { borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 },
   badgeText: { fontSize: 11, fontWeight: "700" },
-  commentText: { fontSize: 14, color: "#374151", fontStyle: "italic", marginBottom: 6 },
-  sub: { fontSize: 12, color: "#6b7280" },
+  commentText: { fontSize: 14, color: "#334155", fontStyle: "italic", marginBottom: 6 },
+  sub: { fontSize: 12, color: ui.textMuted },
   date: { fontSize: 11, color: "#9ca3af", marginTop: 2, marginBottom: 10 },
   actions: { flexDirection: "row", gap: 10 },
   approveBtn: { flex: 1, backgroundColor: "#059669", borderRadius: 8, paddingVertical: 10, alignItems: "center" },
   rejectBtn: { flex: 1, backgroundColor: "#dc2626", borderRadius: 8, paddingVertical: 10, alignItems: "center" },
   btnText: { color: "#fff", fontWeight: "700", fontSize: 13 },
-  empty: { textAlign: "center", marginTop: 60, color: "#9ca3af", fontSize: 15 },
-  pagination: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", padding: 12, borderTopWidth: 1, borderColor: "#f3f4f6" },
-  pageBtn: { fontSize: 15, color: "#1a56db", fontWeight: "600", paddingHorizontal: 8 },
-  pageInfo: { fontSize: 13, color: "#6b7280" },
+  empty: { textAlign: "center", marginTop: 60, color: ui.textMuted, fontSize: 15 },
+  pagination: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", padding: 12, borderTopWidth: 1, borderColor: ui.border },
+  pageBtn: { fontSize: 15, color: brand.base, fontWeight: "700", paddingHorizontal: 8 },
+  pageInfo: { fontSize: 13, color: ui.textMuted },
   disabled: { color: "#d1d5db" },
 });

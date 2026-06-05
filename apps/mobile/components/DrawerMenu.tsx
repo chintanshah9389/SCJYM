@@ -6,6 +6,7 @@ import React, { useEffect, useRef } from "react";
 import {
   Animated,
   Dimensions,
+  Image,
   Modal,
   Platform,
   Pressable,
@@ -17,6 +18,7 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useAuth } from "@/context/AuthContext";
+import { brand, ui } from "@/lib/theme";
 
 const DRAWER_WIDTH = 280;
 const { height } = Dimensions.get("window");
@@ -110,9 +112,11 @@ export default function DrawerMenu({ visible, onClose }: DrawerMenuProps) {
       <Animated.View style={[styles.drawer, { transform: [{ translateX }] }]}>
         {/* Header */}
         <View style={styles.drawerHeader}>
-          <View style={styles.logoCircle}>
-            <Text style={styles.logoEmoji}>🏆</Text>
-          </View>
+          <Image
+            source={require("../assets/icon.png")}
+            style={styles.logoImage}
+            resizeMode="contain"
+          />
           <View style={{ flex: 1 }}>
             <Text style={styles.appName}>SCJYGM</Text>
             {user && <Text style={styles.userName} numberOfLines={1}>{user.fullName}</Text>}
@@ -161,7 +165,7 @@ export default function DrawerMenu({ visible, onClose }: DrawerMenuProps) {
 const styles = StyleSheet.create({
   overlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0,0,0,0.5)",
+    backgroundColor: "rgba(9,17,42,0.5)",
   },
   drawer: {
     position: "absolute",
@@ -169,38 +173,36 @@ const styles = StyleSheet.create({
     left: 0,
     width: DRAWER_WIDTH,
     height: "100%",
-    backgroundColor: "#fff",
-    shadowColor: "#000",
-    shadowOffset: { width: 4, height: 0 },
-    shadowOpacity: 0.2,
-    shadowRadius: 12,
-    elevation: 20,
+    backgroundColor: ui.card,
+    shadowColor: "#0f172a",
+    shadowOffset: { width: 6, height: 0 },
+    shadowOpacity: 0.18,
+    shadowRadius: 18,
+    elevation: 24,
   },
   drawerHeader: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#1a56db",
+    backgroundColor: brand.base,
     padding: 20,
     paddingTop: Platform.OS === "android" ? 44 : 56,
     gap: 12,
+    borderBottomLeftRadius: 22,
+    borderBottomRightRadius: 22,
   },
-  logoCircle: {
+  logoImage: {
     width: 44,
     height: 44,
-    borderRadius: 22,
-    backgroundColor: "rgba(255,255,255,0.2)",
-    alignItems: "center",
-    justifyContent: "center",
+    borderRadius: 10,
   },
-  logoEmoji: { fontSize: 22 },
-  appName: { fontSize: 18, fontWeight: "800", color: "#fff", letterSpacing: 1 },
+  appName: { fontSize: 18, fontWeight: "800", color: "#fff", letterSpacing: 0.8 },
   userName: { fontSize: 12, color: "rgba(255,255,255,0.75)", marginTop: 1 },
   closeBtn: { padding: 8 },
   closeText: { color: "#fff", fontSize: 18, fontWeight: "600" },
   section: {
     fontSize: 11,
     fontWeight: "700",
-    color: "#9ca3af",
+    color: "#7b8ab5",
     letterSpacing: 1.2,
     textTransform: "uppercase",
     paddingHorizontal: 20,
@@ -213,11 +215,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 13,
     borderBottomWidth: 1,
-    borderBottomColor: "#f3f4f6",
+    borderBottomColor: "#eef2ff",
   },
-  adminItem: { backgroundColor: "#faf5ff" },
-  signOutItem: { marginTop: 8, backgroundColor: "#fff5f5" },
+  adminItem: { backgroundColor: brand.tint },
+  signOutItem: { marginTop: 8, backgroundColor: "#fff1f2", borderBottomWidth: 0 },
   navIcon: { fontSize: 18, width: 32 },
-  navLabel: { flex: 1, fontSize: 15, color: "#111827", fontWeight: "500" },
-  navArrow: { fontSize: 18, color: "#d1d5db" },
+  navLabel: { flex: 1, fontSize: 15, color: ui.text, fontWeight: "600" },
+  navArrow: { fontSize: 18, color: "#c0c9e8" },
 });

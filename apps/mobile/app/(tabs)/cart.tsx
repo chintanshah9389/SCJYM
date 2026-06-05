@@ -2,6 +2,7 @@ import React from "react";
 import { View, Text, FlatList, StyleSheet, TouchableOpacity, Alert, ActivityIndicator } from "react-native";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../lib/api";
+import { brand, ui, shadows } from "../../lib/theme";
 
 export default function CartScreen() {
   const qc = useQueryClient();
@@ -19,7 +20,7 @@ export default function CartScreen() {
   const items = cart?.items ?? [];
   const total = items.reduce((sum: number, i: any) => sum + i.price * i.quantity, 0);
 
-  if (isLoading) return <ActivityIndicator size="large" color="#1a56db" style={{ marginTop: 60 }} />;
+  if (isLoading) return <ActivityIndicator size="large" color={brand.base} style={{ marginTop: 60 }} />;
 
   return (
     <View style={styles.container}>
@@ -63,29 +64,38 @@ export default function CartScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f9fafb", padding: 16 },
-  header: { fontSize: 24, fontWeight: "bold", color: "#111827", marginBottom: 16 },
-  empty: { textAlign: "center", color: "#9ca3af", marginTop: 40, fontSize: 16 },
+  container: { flex: 1, backgroundColor: ui.pageBg, padding: 16, paddingBottom: 92 },
+  header: { fontSize: 26, fontWeight: "800", color: ui.text, marginBottom: 16, letterSpacing: 0.2 },
+  empty: { textAlign: "center", color: ui.textMuted, marginTop: 40, fontSize: 16 },
   item: {
     flexDirection: "row",
-    backgroundColor: "#fff",
-    borderRadius: 10,
+    backgroundColor: ui.card,
+    borderRadius: 14,
     padding: 14,
-    marginBottom: 10,
+    marginBottom: 12,
     alignItems: "center",
-    elevation: 2,
+    borderWidth: 1,
+    borderColor: ui.border,
+    ...shadows.card,
   },
   itemInfo: { flex: 1 },
-  itemTitle: { fontSize: 15, fontWeight: "600", color: "#111827" },
-  itemPrice: { fontSize: 13, color: "#6b7280", marginTop: 4 },
-  remove: { fontSize: 18, color: "#ef4444", paddingHorizontal: 8 },
-  footer: { borderTopWidth: 1, borderColor: "#e5e7eb", paddingTop: 16, marginTop: 8 },
-  total: { fontSize: 18, fontWeight: "700", color: "#111827", marginBottom: 12 },
+  itemTitle: { fontSize: 15, fontWeight: "700", color: ui.text },
+  itemPrice: { fontSize: 13, color: ui.textMuted, marginTop: 4 },
+  remove: { fontSize: 20, color: ui.danger, paddingHorizontal: 8, fontWeight: "800" },
+  footer: {
+    borderTopWidth: 1,
+    borderColor: ui.border,
+    paddingTop: 16,
+    marginTop: 8,
+    backgroundColor: ui.pageBg,
+  },
+  total: { fontSize: 19, fontWeight: "800", color: ui.text, marginBottom: 12 },
   checkoutBtn: {
-    backgroundColor: "#1a56db",
-    borderRadius: 8,
+    backgroundColor: brand.base,
+    borderRadius: 12,
     padding: 14,
     alignItems: "center",
+    ...shadows.soft,
   },
-  checkoutText: { color: "#fff", fontSize: 16, fontWeight: "600" },
+  checkoutText: { color: "#fff", fontSize: 16, fontWeight: "800", letterSpacing: 0.2 },
 });

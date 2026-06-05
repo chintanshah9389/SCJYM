@@ -20,6 +20,7 @@ import {
 import * as ImagePicker from "expo-image-picker";
 import { router } from "expo-router";
 import { api } from "@/lib/api";
+import { brand, ui, shadows } from "@/lib/theme";
 
 interface ImageAsset {
   uri: string;
@@ -232,20 +233,21 @@ export default function SubmitProductScreen() {
 }
 
 const styles = StyleSheet.create({
-  flex: { flex: 1, backgroundColor: "#f9fafb" },
+  flex: { flex: 1, backgroundColor: ui.pageBg },
   container: { padding: 20, paddingBottom: 60 },
-  title: { fontSize: 22, fontWeight: "700", color: "#111827", marginBottom: 4 },
-  subtitle: { fontSize: 13, color: "#6b7280", marginBottom: 20 },
-  label: { fontSize: 14, fontWeight: "600", color: "#374151", marginBottom: 6, marginTop: 14 },
+  title: { fontSize: 24, fontWeight: "800", color: ui.text, marginBottom: 4 },
+  subtitle: { fontSize: 13, color: ui.textMuted, marginBottom: 20 },
+  label: { fontSize: 14, fontWeight: "700", color: "#334155", marginBottom: 6, marginTop: 14 },
   input: {
-    backgroundColor: "#fff",
+    backgroundColor: ui.card,
     borderWidth: 1,
-    borderColor: "#d1d5db",
-    borderRadius: 10,
+    borderColor: ui.border,
+    borderRadius: 12,
     paddingHorizontal: 14,
     paddingVertical: 12,
     fontSize: 15,
-    color: "#111827",
+    color: ui.text,
+    ...shadows.soft,
   },
   textarea: { height: 100 },
   imageRow: { flexDirection: "row", flexWrap: "wrap", gap: 10, marginTop: 4 },
@@ -268,18 +270,20 @@ const styles = StyleSheet.create({
     height: 80,
     borderRadius: 8,
     borderWidth: 2,
-    borderColor: "#d1d5db",
+    borderColor: ui.border,
     borderStyle: "dashed",
     alignItems: "center",
     justifyContent: "center",
+    backgroundColor: ui.card,
   },
-  addImageText: { fontSize: 13, color: "#6b7280", fontWeight: "600" },
+  addImageText: { fontSize: 13, color: ui.textMuted, fontWeight: "700" },
   submitBtn: {
-    backgroundColor: "#1a56db",
+    backgroundColor: brand.base,
     borderRadius: 12,
     paddingVertical: 16,
     alignItems: "center",
     marginTop: 28,
+    ...shadows.soft,
   },
   submitBtnDisabled: { opacity: 0.6 },
   submitBtnText: { color: "#fff", fontSize: 16, fontWeight: "700" },

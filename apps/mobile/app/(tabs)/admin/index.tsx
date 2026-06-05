@@ -16,6 +16,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { api } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
+import { brand, ui, shadows } from "@/lib/theme";
 
 const ADMIN_LINKS = [
   { label: "👤 User Approvals", href: "/admin/user-approvals", color: "#1a56db" },
@@ -58,7 +59,7 @@ export default function AdminHubScreen() {
       <Text style={styles.subtitle}>Logged in as {user?.fullName} ({user?.role})</Text>
 
       {isLoading ? (
-        <ActivityIndicator color="#1a56db" style={{ marginVertical: 24 }} />
+        <ActivityIndicator color={brand.base} style={{ marginVertical: 24 }} />
       ) : (
         <View style={styles.statsGrid}>
           <StatCard label="Members" value={stats.totalUsers} color="#1a56db" />
@@ -98,36 +99,37 @@ function StatCard({ label, value, color, onPress }: { label: string; value: any;
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f9fafb" },
+  container: { flex: 1, backgroundColor: ui.pageBg },
   content: { padding: 20, paddingBottom: 40 },
-  title: { fontSize: 24, fontWeight: "800", color: "#111827", marginBottom: 2 },
-  subtitle: { fontSize: 13, color: "#6b7280", marginBottom: 20 },
+  title: { fontSize: 24, fontWeight: "800", color: ui.text, marginBottom: 2 },
+  subtitle: { fontSize: 13, color: ui.textMuted, marginBottom: 20 },
   statsGrid: { flexDirection: "row", flexWrap: "wrap", gap: 12, marginBottom: 28 },
   statCard: {
     flex: 1,
     minWidth: "45%",
-    backgroundColor: "#fff",
-    borderRadius: 12,
+    backgroundColor: ui.card,
+    borderRadius: 14,
     padding: 16,
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
+    borderWidth: 1,
+    borderColor: ui.border,
+    ...shadows.card,
   },
   statValue: { fontSize: 32, fontWeight: "800", marginBottom: 4 },
-  statLabel: { fontSize: 13, color: "#6b7280" },
-  sectionTitle: { fontSize: 16, fontWeight: "700", color: "#374151", marginBottom: 10 },
+  statLabel: { fontSize: 13, color: ui.textMuted },
+  sectionTitle: { fontSize: 16, fontWeight: "700", color: "#334155", marginBottom: 10 },
   link: {
-    backgroundColor: "#fff",
-    borderRadius: 10,
+    backgroundColor: ui.card,
+    borderRadius: 12,
     padding: 16,
     marginBottom: 10,
     borderLeftWidth: 4,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    elevation: 1,
+    borderWidth: 1,
+    borderColor: ui.border,
+    ...shadows.soft,
   },
-  linkText: { fontSize: 15, fontWeight: "600", color: "#111827" },
+  linkText: { fontSize: 15, fontWeight: "700", color: ui.text },
   arrow: { fontSize: 20, color: "#9ca3af" },
 });

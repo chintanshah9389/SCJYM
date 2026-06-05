@@ -36,6 +36,7 @@ class ProductIn(BaseModel):
     tags: list[str] = []
     price: float = Field(..., ge=0)
     inventory: int = Field(..., ge=0)
+    productCode: Optional[str] = Field(None, min_length=3, max_length=64)
 
 
 class ProductUpdateIn(BaseModel):
@@ -100,6 +101,7 @@ def _new_product_doc(body: ProductIn, owner_id: str) -> dict:
         "lastActivityAt": None,
         "ratingsLocked": False,
         "commentsLocked": False,
+        "productCode": body.productCode,
         "createdAt": now,
         "updatedAt": now,
     }
@@ -113,6 +115,14 @@ async def create_product(
     current_user: dict = Depends(get_current_user),
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
+    if body.productCode:
+        existing = await db.products.find_one({"productCode": body.productCode}, {"_id": 1})
+        if existing:
+            raise HTTPException(
+                status_code=409,
+                detail=err("CONFLICT", "Product code already exists"),
+            )
+
     doc = _new_product_doc(body, str(current_user["_id"]))
     result = await db.products.insert_one(doc)
     doc["_id"] = result.inserted_id

@@ -13,6 +13,7 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { api } from "../../lib/api";
+import { brand, ui, shadows } from "../../lib/theme";
 
 export default function RegisterScreen() {
   const router = useRouter();
@@ -73,7 +74,7 @@ export default function RegisterScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={{ flex: 1, backgroundColor: "#fff" }}
+      style={{ flex: 1, backgroundColor: ui.pageBg }}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       keyboardVerticalOffset={Platform.OS === "android" ? 24 : 0}
     >
@@ -82,12 +83,16 @@ export default function RegisterScreen() {
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"
       >
-        <Text style={styles.title}>Create Account</Text>
+        <View style={styles.hero}>
+          <Text style={styles.title}>Create Account</Text>
+          <Text style={styles.subtitle}>Join SCJYGM with your details and start exploring.</Text>
+        </View>
         {fields.map(([key, placeholder, kbType, secure, autoCapitalize]) => (
           <TextInput
             key={key}
             style={styles.input}
             placeholder={placeholder}
+            placeholderTextColor="#8ea0d2"
             value={(form as any)[key]}
             onChangeText={update(key)}
             keyboardType={kbType as any}
@@ -113,23 +118,36 @@ export default function RegisterScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flexGrow: 1, padding: 24, paddingTop: 48, paddingBottom: 32 },
-  title: { fontSize: 28, fontWeight: "bold", color: "#1a56db", marginBottom: 24 },
+  container: { flexGrow: 1, padding: 20, paddingTop: 34, paddingBottom: 32 },
+  hero: {
+    backgroundColor: brand.base,
+    borderRadius: 18,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    marginBottom: 18,
+    ...shadows.card,
+  },
+  title: { fontSize: 28, fontWeight: "800", color: "#fff" },
+  subtitle: { color: "rgba(255,255,255,0.84)", marginTop: 6, fontSize: 13 },
   input: {
     borderWidth: 1,
-    borderColor: "#d1d5db",
-    borderRadius: 8,
+    borderColor: ui.border,
+    borderRadius: 12,
     padding: 12,
     fontSize: 16,
     marginBottom: 12,
+    backgroundColor: ui.card,
+    color: ui.text,
+    ...shadows.soft,
   },
   btn: {
-    backgroundColor: "#1a56db",
-    borderRadius: 8,
+    backgroundColor: brand.base,
+    borderRadius: 12,
     padding: 14,
     alignItems: "center",
     marginVertical: 16,
+    ...shadows.soft,
   },
-  btnText: { color: "#fff", fontSize: 16, fontWeight: "600" },
-  link: { color: "#1a56db", textAlign: "center", marginTop: 8 },
+  btnText: { color: "#fff", fontSize: 16, fontWeight: "800" },
+  link: { color: brand.base, textAlign: "center", marginTop: 8, fontWeight: "700" },
 });

@@ -18,6 +18,7 @@ import {
 } from "react-native";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
+import { brand, ui, shadows } from "@/lib/theme";
 
 const ITEM_TYPES = ["SCREEN_ROUTE", "YOUTUBE_URL", "LIVE_URL", "CATEGORY_FILTER", "EXTERNAL_URL"];
 
@@ -89,7 +90,7 @@ export default function MenuManagerScreen() {
     saveMut.mutate({ ...form, order: parseInt(form.order) || 0 });
   }
 
-  if (isLoading) return <ActivityIndicator size="large" color="#1a56db" style={{ marginTop: 60 }} />;
+  if (isLoading) return <ActivityIndicator size="large" color={brand.base} style={{ marginTop: 60 }} />;
 
   return (
     <View style={styles.container}>
@@ -175,35 +176,35 @@ export default function MenuManagerScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f9fafb" },
-  addBtn: { margin: 12, backgroundColor: "#1a56db", borderRadius: 10, paddingVertical: 12, alignItems: "center" },
+  container: { flex: 1, backgroundColor: ui.pageBg },
+  addBtn: { margin: 12, backgroundColor: brand.base, borderRadius: 12, paddingVertical: 12, alignItems: "center", ...shadows.soft },
   addBtnText: { color: "#fff", fontWeight: "700", fontSize: 15 },
-  empty: { textAlign: "center", marginTop: 60, color: "#9ca3af", fontSize: 15 },
-  card: { backgroundColor: "#fff", borderRadius: 12, padding: 14, marginBottom: 10, flexDirection: "row", elevation: 1 },
+  empty: { textAlign: "center", marginTop: 60, color: ui.textMuted, fontSize: 15 },
+  card: { backgroundColor: ui.card, borderRadius: 14, padding: 14, marginBottom: 10, flexDirection: "row", borderWidth: 1, borderColor: ui.border, ...shadows.card },
   cardBody: { flex: 1 },
   cardTop: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 2 },
-  label: { fontSize: 15, fontWeight: "700", color: "#111827" },
+  label: { fontSize: 15, fontWeight: "700", color: ui.text },
   enabledDot: { width: 8, height: 8, borderRadius: 4 },
-  type: { fontSize: 12, color: "#1a56db", fontWeight: "600" },
-  target: { fontSize: 12, color: "#6b7280", marginTop: 2 },
+  type: { fontSize: 12, color: brand.base, fontWeight: "700" },
+  target: { fontSize: 12, color: ui.textMuted, marginTop: 2 },
   cardActions: { gap: 6, justifyContent: "center" },
   editBtn: { backgroundColor: "#e0f2fe", borderRadius: 6, paddingHorizontal: 10, paddingVertical: 6 },
   editBtnText: { color: "#0369a1", fontSize: 12, fontWeight: "700" },
   deleteBtn: { backgroundColor: "#fee2e2", borderRadius: 6, paddingHorizontal: 10, paddingVertical: 6 },
   deleteBtnText: { color: "#dc2626", fontSize: 12, fontWeight: "700" },
   modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.45)", justifyContent: "flex-end" },
-  modalBox: { backgroundColor: "#fff", borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 24, paddingBottom: 40 },
-  modalTitle: { fontSize: 18, fontWeight: "800", color: "#111827", marginBottom: 16 },
-  fieldLabel: { fontSize: 13, fontWeight: "600", color: "#374151", marginBottom: 6, marginTop: 12 },
-  input: { backgroundColor: "#f9fafb", borderWidth: 1, borderColor: "#d1d5db", borderRadius: 10, paddingHorizontal: 14, paddingVertical: 11, fontSize: 14, color: "#111827" },
-  typeChip: { borderWidth: 1, borderColor: "#d1d5db", borderRadius: 16, paddingHorizontal: 12, paddingVertical: 6, marginRight: 8, backgroundColor: "#fff" },
-  typeChipActive: { backgroundColor: "#1a56db", borderColor: "#1a56db" },
+  modalBox: { backgroundColor: ui.card, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 24, paddingBottom: 40, borderTopWidth: 1, borderColor: ui.border },
+  modalTitle: { fontSize: 18, fontWeight: "800", color: ui.text, marginBottom: 16 },
+  fieldLabel: { fontSize: 13, fontWeight: "600", color: "#334155", marginBottom: 6, marginTop: 12 },
+  input: { backgroundColor: "#f8faff", borderWidth: 1, borderColor: ui.border, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 11, fontSize: 14, color: ui.text },
+  typeChip: { borderWidth: 1, borderColor: ui.border, borderRadius: 16, paddingHorizontal: 12, paddingVertical: 6, marginRight: 8, backgroundColor: ui.card },
+  typeChipActive: { backgroundColor: brand.base, borderColor: brand.base },
   typeChipText: { fontSize: 12, color: "#374151", fontWeight: "600" },
   typeChipTextActive: { color: "#fff" },
   switchRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 12 },
   modalActions: { flexDirection: "row", gap: 12, marginTop: 20 },
-  cancelBtn: { flex: 1, borderWidth: 1, borderColor: "#d1d5db", borderRadius: 10, paddingVertical: 12, alignItems: "center" },
+  cancelBtn: { flex: 1, borderWidth: 1, borderColor: ui.border, borderRadius: 10, paddingVertical: 12, alignItems: "center", backgroundColor: "#f8faff" },
   cancelText: { fontSize: 14, color: "#374151", fontWeight: "600" },
-  saveBtn: { flex: 1, backgroundColor: "#1a56db", borderRadius: 10, paddingVertical: 12, alignItems: "center" },
+  saveBtn: { flex: 1, backgroundColor: brand.base, borderRadius: 10, paddingVertical: 12, alignItems: "center" },
   saveBtnText: { color: "#fff", fontWeight: "700", fontSize: 15 },
 });

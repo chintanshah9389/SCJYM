@@ -79,7 +79,10 @@ export async function verifyPushNotifications(): Promise<void> {
       if (subscription) {
         console.log(`  ✅ Push Subscription Active`);
         console.log(`     Endpoint: ${subscription.endpoint.substring(0, 50)}...`);
-        console.log(`     Keys: ${subscription.getKey ? "✅ Present" : "❌ Missing"}`);
+        const p256dhKey = subscription.getKey("p256dh");
+        const authKey = subscription.getKey("auth");
+        const hasKeys = !!p256dhKey && !!authKey;
+        console.log(`     Keys: ${hasKeys ? "✅ Present" : "❌ Missing"}`);
       } else {
         console.log(`  ❌ No Push Subscription found`);
         console.log(`     Next step: Log in to trigger subscription`);

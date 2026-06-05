@@ -148,6 +148,11 @@ async def create_indexes() -> None:
     await db.products.create_index([("status", ASCENDING)])
     await db.products.create_index([("ownerId", ASCENDING)])
     await db.products.create_index([("category", ASCENDING)])
+    await db.products.create_index(
+        [("productCode", ASCENDING)],
+        unique=True,
+        partialFilterExpression={"productCode": {"$type": "string", "$ne": ""}},
+    )
     await db.products.create_index([("bayesianRating", DESCENDING)])
     await db.products.create_index([("bestSellerScore", DESCENDING)])
     await db.products.create_index(

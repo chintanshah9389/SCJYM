@@ -15,6 +15,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../lib/api";
 import { useAuth } from "../../context/AuthContext";
 import { useRouter } from "expo-router";
+import { brand, ui, shadows } from "../../lib/theme";
 // @ts-ignore
 import * as FileSystem from "expo-file-system";
 import { fromByteArray } from "base64-js";
@@ -196,10 +197,10 @@ export default function MembersScreen() {
               </View>
               <View style={{ flexDirection: "row" }}>
                 <TouchableOpacity onPress={() => handleExport("csv")} style={{ padding: 6, marginRight: 8 }}>
-                  <Text style={{ color: "#1a56db", fontWeight: "700" }}>{exporting ? "Exporting..." : "Export CSV"}</Text>
+                  <Text style={{ color: brand.base, fontWeight: "700" }}>{exporting ? "Exporting..." : "Export CSV"}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity onPress={() => handleExport("xlsx")} style={{ padding: 6 }}>
-                  <Text style={{ color: "#1a56db", fontWeight: "700" }}>{exporting ? "Exporting..." : "Export XLSX"}</Text>
+                  <Text style={{ color: brand.base, fontWeight: "700" }}>{exporting ? "Exporting..." : "Export XLSX"}</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -209,7 +210,7 @@ export default function MembersScreen() {
       )}
 
       {isLoading ? (
-        <ActivityIndicator size="large" color="#1a56db" style={{ marginTop: 40 }} />
+        <ActivityIndicator size="large" color={brand.base} style={{ marginTop: 40 }} />
       ) : (
         <FlatList
           data={displayedMembers}
@@ -251,16 +252,18 @@ export default function MembersScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f9fafb" },
-  header: { fontSize: 22, fontWeight: "bold", padding: 16, color: "#111827" },
+  container: { flex: 1, backgroundColor: ui.pageBg },
+  header: { fontSize: 23, fontWeight: "800", padding: 16, color: ui.text },
   search: {
     marginHorizontal: 12,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: "#d1d5db",
-    borderRadius: 8,
-    padding: 10,
-    backgroundColor: "#fff",
+    borderColor: ui.border,
+    borderRadius: 12,
+    padding: 12,
+    backgroundColor: ui.card,
+    color: ui.text,
+    ...shadows.soft,
   },
   input: {
     marginVertical: 6,
@@ -270,21 +273,30 @@ const styles = StyleSheet.create({
     padding: 10,
     backgroundColor: "#fff",
   },
-  card: { backgroundColor: "#fff", marginHorizontal: 12, marginBottom: 8, borderRadius: 10, padding: 14, elevation: 2 },
-  name: { fontSize: 15, fontWeight: "600", color: "#111827" },
-  sub: { fontSize: 13, color: "#6b7280", marginTop: 4 },
+  card: {
+    backgroundColor: ui.card,
+    marginHorizontal: 12,
+    marginBottom: 10,
+    borderRadius: 12,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: ui.border,
+    ...shadows.card,
+  },
+  name: { fontSize: 15, fontWeight: "700", color: ui.text },
+  sub: { fontSize: 13, color: ui.textMuted, marginTop: 4 },
   badge: { marginTop: 6, fontSize: 12, fontWeight: "700", color: "#1a56db" },
-  empty: { textAlign: "center", marginTop: 40, color: "#9ca3af" },
+  empty: { textAlign: "center", marginTop: 40, color: ui.textMuted },
   center: { flex: 1, justifyContent: "center", alignItems: "center" },
   noAccess: { color: "#6b7280", fontSize: 16 },
   pagination: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", padding: 12 },
-  pageBtn: { color: "#1a56db", fontSize: 16, fontWeight: "600" },
-  disabled: { color: "#d1d5db" },
-  pageInfo: { color: "#6b7280" },
-  label: { marginHorizontal: 12, marginTop: 8, color: "#374151", fontSize: 13, fontWeight: "600" },
+  pageBtn: { color: brand.base, fontSize: 16, fontWeight: "700" },
+  disabled: { color: "#b9c4e4" },
+  pageInfo: { color: ui.textMuted },
+  label: { marginHorizontal: 12, marginTop: 8, color: "#334155", fontSize: 13, fontWeight: "700" },
   dropdownContainer: { marginHorizontal: 12, backgroundColor: "#fff", borderRadius: 8, borderWidth: 1, borderColor: "#e5e7eb", overflow: "hidden" },
   dropdownItem: { padding: 10, borderBottomWidth: 1, borderBottomColor: "#f3f4f6" },
   dropdownSelected: { color: "#1a56db", fontWeight: "700" },
-  filterChip: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 20, borderWidth: 1, borderColor: "#e5e7eb", backgroundColor: "#fff", marginRight: 8, marginBottom: 8 },
-  filterChipActive: { backgroundColor: "#1a56db", borderColor: "#1a56db" },
+  filterChip: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 20, borderWidth: 1, borderColor: ui.border, backgroundColor: ui.card, marginRight: 8, marginBottom: 8 },
+  filterChipActive: { backgroundColor: brand.base, borderColor: brand.base },
 });

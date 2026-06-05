@@ -18,6 +18,7 @@ import {
 } from "react-native";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
+import { brand, ui, shadows } from "@/lib/theme";
 
 type AdminUser = {
   id: string;
@@ -301,7 +302,7 @@ export default function AdminPushNotificationsScreen() {
               <Text style={styles.selectedCount}>Selected: {selectedUserIds.size}</Text>
 
               {usersLoading ? (
-                <ActivityIndicator size="small" color="#1a56db" style={{ marginTop: 8 }} />
+                <ActivityIndicator size="small" color={brand.base} style={{ marginTop: 8 }} />
               ) : (
                 <View style={styles.userListBox}>
                   {filteredUsers.slice(0, 50).map((u) => {
@@ -353,7 +354,7 @@ export default function AdminPushNotificationsScreen() {
           </View>
 
           {histLoading ? (
-            <ActivityIndicator size="large" color="#1a56db" style={{ marginTop: 40 }} />
+            <ActivityIndicator size="large" color={brand.base} style={{ marginTop: 40 }} />
           ) : (
             <FlatList
               data={history ?? []}
@@ -383,44 +384,44 @@ export default function AdminPushNotificationsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f9fafb" },
-  tabRow: { flexDirection: "row", borderBottomWidth: 1, borderColor: "#e5e7eb" },
+  container: { flex: 1, backgroundColor: ui.pageBg },
+  tabRow: { flexDirection: "row", borderBottomWidth: 1, borderColor: ui.border, backgroundColor: ui.card },
   tab: { flex: 1, paddingVertical: 14, alignItems: "center" },
-  tabActive: { borderBottomWidth: 2, borderColor: "#1a56db" },
-  tabText: { fontSize: 14, color: "#6b7280", fontWeight: "600" },
-  tabTextActive: { color: "#1a56db" },
+  tabActive: { borderBottomWidth: 2, borderColor: brand.base },
+  tabText: { fontSize: 14, color: ui.textMuted, fontWeight: "600" },
+  tabTextActive: { color: brand.base },
   form: { padding: 20 },
-  statusBox: { backgroundColor: "#f0f9ff", borderWidth: 1, borderColor: "#93c5fd", borderRadius: 8, padding: 12, marginBottom: 16 },
+  statusBox: { backgroundColor: "#eff6ff", borderWidth: 1, borderColor: "#bfdbfe", borderRadius: 10, padding: 12, marginBottom: 16 },
   statusText: { fontSize: 13, color: "#1e40af", fontWeight: "500" },
-  testBtn: { backgroundColor: "#10b981", borderRadius: 8, paddingVertical: 10, alignItems: "center", marginBottom: 20 },
+  testBtn: { backgroundColor: "#0f766e", borderRadius: 10, paddingVertical: 10, alignItems: "center", marginBottom: 20, ...shadows.soft },
   testBtnText: { color: "#fff", fontSize: 14, fontWeight: "600" },
-  label: { fontSize: 14, fontWeight: "600", color: "#374151", marginBottom: 6, marginTop: 14 },
-  input: { backgroundColor: "#fff", borderWidth: 1, borderColor: "#d1d5db", borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12, fontSize: 15, color: "#111827" },
+  label: { fontSize: 14, fontWeight: "600", color: "#334155", marginBottom: 6, marginTop: 14 },
+  input: { backgroundColor: ui.card, borderWidth: 1, borderColor: ui.border, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, fontSize: 15, color: ui.text },
   textarea: { height: 110 },
   targetModeRow: { flexDirection: "row", gap: 10, marginTop: 8 },
   targetModeBtn: {
     flex: 1,
     borderWidth: 1,
-    borderColor: "#d1d5db",
-    borderRadius: 8,
+    borderColor: ui.border,
+    borderRadius: 10,
     paddingVertical: 10,
     alignItems: "center",
-    backgroundColor: "#fff",
+    backgroundColor: ui.card,
   },
   targetModeBtnActive: {
-    borderColor: "#1a56db",
+    borderColor: brand.base,
     backgroundColor: "#eff6ff",
   },
-  targetModeText: { color: "#6b7280", fontSize: 13, fontWeight: "600" },
-  targetModeTextActive: { color: "#1a56db" },
+  targetModeText: { color: ui.textMuted, fontSize: 13, fontWeight: "600" },
+  targetModeTextActive: { color: brand.base },
   userSelectWrap: { marginTop: 10 },
-  selectedCount: { marginTop: 8, fontSize: 12, color: "#374151", fontWeight: "600" },
+  selectedCount: { marginTop: 8, fontSize: 12, color: "#334155", fontWeight: "700" },
   userListBox: {
     marginTop: 8,
     borderWidth: 1,
-    borderColor: "#e5e7eb",
-    borderRadius: 8,
-    backgroundColor: "#fff",
+    borderColor: ui.border,
+    borderRadius: 10,
+    backgroundColor: ui.card,
     maxHeight: 220,
     paddingVertical: 4,
   },
@@ -440,14 +441,14 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
   },
   checkboxChecked: {
-    borderColor: "#1a56db",
-    backgroundColor: "#1a56db",
+    borderColor: brand.base,
+    backgroundColor: brand.base,
   },
-  userName: { fontSize: 13, fontWeight: "600", color: "#111827" },
-  userEmail: { fontSize: 12, color: "#6b7280" },
-  emptyUsers: { textAlign: "center", color: "#9ca3af", paddingVertical: 12 },
-  hint: { fontSize: 13, color: "#6b7280", marginTop: 16, lineHeight: 20 },
-  sendBtn: { backgroundColor: "#1a56db", borderRadius: 12, paddingVertical: 16, alignItems: "center", marginTop: 24 },
+  userName: { fontSize: 13, fontWeight: "600", color: ui.text },
+  userEmail: { fontSize: 12, color: ui.textMuted },
+  emptyUsers: { textAlign: "center", color: ui.textMuted, paddingVertical: 12 },
+  hint: { fontSize: 13, color: ui.textMuted, marginTop: 16, lineHeight: 20 },
+  sendBtn: { backgroundColor: brand.base, borderRadius: 12, paddingVertical: 16, alignItems: "center", marginTop: 24, ...shadows.soft },
   sendBtnText: { color: "#fff", fontSize: 16, fontWeight: "700" },
   disabled: { opacity: 0.6 },
   historyActions: {
@@ -456,7 +457,7 @@ const styles = StyleSheet.create({
     alignItems: "flex-end",
   },
   clearAllBtn: {
-    backgroundColor: "#991b1b",
+    backgroundColor: "#b91c1c",
     borderRadius: 8,
     paddingHorizontal: 10,
     paddingVertical: 8,
@@ -466,10 +467,10 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "700",
   },
-  empty: { textAlign: "center", marginTop: 60, color: "#9ca3af", fontSize: 15 },
-  histCard: { backgroundColor: "#fff", borderRadius: 10, padding: 14, marginBottom: 10, elevation: 1, position: "relative" },
-  notifTitle: { fontSize: 15, fontWeight: "700", color: "#111827", marginBottom: 4 },
-  notifBody: { fontSize: 13, color: "#374151", marginBottom: 6 },
+  empty: { textAlign: "center", marginTop: 60, color: ui.textMuted, fontSize: 15 },
+  histCard: { backgroundColor: ui.card, borderRadius: 12, padding: 14, marginBottom: 10, borderWidth: 1, borderColor: ui.border, position: "relative", ...shadows.soft },
+  notifTitle: { fontSize: 15, fontWeight: "700", color: ui.text, marginBottom: 4 },
+  notifBody: { fontSize: 13, color: "#334155", marginBottom: 6 },
   notifDate: { fontSize: 12, color: "#9ca3af" },
   deleteBtn: {
     position: "absolute",

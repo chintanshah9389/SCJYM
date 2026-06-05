@@ -1,11 +1,14 @@
 import { Stack } from "expo-router";
-import { useEffect, useRef } from "react";
-import { View, Text, StyleSheet, Animated, Platform } from "react-native";
+import { useEffect, useRef, useState } from "react";
+import { View, Text, Image, StyleSheet, Animated, Platform } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider, useAuth } from "../context/AuthContext";
 import { ToastProvider } from "../context/ToastContext";
 import { useRouter, useSegments } from "expo-router";
 import { toastEmitter } from "../lib/toastEmitter";
+import { brand } from "../lib/theme";
+import BrandMark from "../components/BrandMark";
 
 const queryClient = new QueryClient();
 
@@ -25,8 +28,26 @@ function RootNavigator() {
   const { user, isLoading, logout } = useAuth();
   const router = useRouter();
   const segments = useSegments();
+  const [showStinger, setShowStinger] = useState(true);
+  const [stingerExiting, setStingerExiting] = useState(false);
   const notificationListener = useRef<any>(null);
   const responseListener = useRef<any>(null);
+
+  useEffect(() => {
+    if (isLoading) {
+      setShowStinger(true);
+      setStingerExiting(false);
+      return;
+    }
+
+    const startExit = setTimeout(() => setStingerExiting(true), 120);
+    const hideSplash = setTimeout(() => setShowStinger(false), 720);
+
+    return () => {
+      clearTimeout(startExit);
+      clearTimeout(hideSplash);
+    };
+  }, [isLoading]);
 
   useEffect(() => {
     if (isLoading) return;
@@ -79,13 +100,13 @@ function RootNavigator() {
     };
   }, [user]);
 
-  if (isLoading) return <SplashScreen />;
+  if (isLoading || showStinger) return <SplashScreen exiting={stingerExiting && !isLoading} />;
 
   return (
     <Stack
       screenOptions={{
         headerShown: false,
-        headerStyle: { backgroundColor: "#1a56db" },
+        headerStyle: { backgroundColor: brand.base },
         headerTintColor: "#fff",
         headerTitleStyle: { fontWeight: "700" },
         headerBackTitle: "",
@@ -98,89 +119,185 @@ function RootNavigator() {
 
 export default RootLayout;
 
-function SplashScreen() {
-  const scale = useRef(new Animated.Value(0.6)).current;
+function SplashScreen({ exiting = false }: { exiting?: boolean }) {
+  const scale = useRef(new Animated.Value(0.82)).current;
   const opacity = useRef(new Animated.Value(0)).current;
-  const dotsOpacity = useRef(new Animated.Value(0)).current;
+  const exitOpacity = useRef(new Animated.Value(1)).current;
+  const exitScale = useRef(new Animated.Value(1)).current;
+  const ringScale = useRef(new Animated.Value(0.84)).current;
+  const ringOpacity = useRef(new Animated.Value(0.4)).current;
+  const rotate = useRef(new Animated.Value(0)).current;
+  const floatY = useRef(new Animated.Value(0)).current;
+  const textY = useRef(new Animated.Value(10)).current;
+  const textOpacity = useRef(new Animated.Value(0)).current;
+  const foldLeftX = useRef(new Animated.Value(-42)).current;
+  const foldRightX = useRef(new Animated.Value(42)).current;
+  const foldTopY = useRef(new Animated.Value(-36)).current;
+  const foldOpacity = useRef(new Animated.Value(0)).current;
+  const pulseAccent = useRef(new Animated.Value(0.35)).current;
 
   useEffect(() => {
     Animated.sequence([
       Animated.parallel([
-        Animated.spring(scale, { toValue: 1, useNativeDriver: true, tension: 60, friction: 7 }),
-        Animated.timing(opacity, { toValue: 1, duration: 500, useNativeDriver: true }),
+        Animated.spring(scale, { toValue: 1, useNativeDriver: true, tension: 70, friction: 8 }),
+        Animated.timing(opacity, { toValue: 1, duration: 600, useNativeDriver: true }),
+        Animated.timing(foldOpacity, { toValue: 1, duration: 450, useNativeDriver: true }),
       ]),
-      Animated.timing(dotsOpacity, { toValue: 1, duration: 300, delay: 200, useNativeDriver: true }),
+      Animated.parallel([
+        Animated.timing(textOpacity, { toValue: 1, duration: 480, useNativeDriver: true }),
+        Animated.spring(textY, { toValue: 0, useNativeDriver: true, tension: 58, friction: 9 }),
+        Animated.spring(foldLeftX, { toValue: -14, useNativeDriver: true, tension: 64, friction: 8 }),
+        Animated.spring(foldRightX, { toValue: 14, useNativeDriver: true, tension: 64, friction: 8 }),
+        Animated.spring(foldTopY, { toValue: -16, useNativeDriver: true, tension: 64, friction: 8 }),
+      ]),
     ]).start();
-  }, []);
 
-  return (
-    <View style={splash.root}>
-      <Animated.View style={[splash.circle, { transform: [{ scale }], opacity }]}>
-        <Text style={splash.emoji}>🏆</Text>
-      </Animated.View>
-      <Animated.Text style={[splash.name, { opacity }]}>SCJYGM</Animated.Text>
-      <Animated.Text style={[splash.tagline, { opacity }]}>Discover · Rank · Connect</Animated.Text>
-      <Animated.View style={[splash.dotsRow, { opacity: dotsOpacity }]}>
-        {[0, 1, 2].map((i) => (
-          <BounceDot key={i} delay={i * 150} />
-        ))}
-      </Animated.View>
-    </View>
-  );
-}
-
-function BounceDot({ delay }: { delay: number }) {
-  const y = useRef(new Animated.Value(0)).current;
-  useEffect(() => {
     Animated.loop(
       Animated.sequence([
-        Animated.delay(delay),
-        Animated.timing(y, { toValue: -8, duration: 300, useNativeDriver: true }),
-        Animated.timing(y, { toValue: 0, duration: 300, useNativeDriver: true }),
-        Animated.delay(600 - delay),
+        Animated.parallel([
+          Animated.timing(ringScale, { toValue: 1.2, duration: 1200, useNativeDriver: true }),
+          Animated.timing(ringOpacity, { toValue: 0.1, duration: 1200, useNativeDriver: true }),
+        ]),
+        Animated.parallel([
+          Animated.timing(ringScale, { toValue: 0.84, duration: 0, useNativeDriver: true }),
+          Animated.timing(ringOpacity, { toValue: 0.4, duration: 0, useNativeDriver: true }),
+        ]),
+      ])
+    ).start();
+
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(floatY, { toValue: -7, duration: 1300, useNativeDriver: true }),
+        Animated.timing(floatY, { toValue: 0, duration: 1300, useNativeDriver: true }),
+      ])
+    ).start();
+
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(rotate, { toValue: 1, duration: 10000, useNativeDriver: true }),
+        Animated.timing(rotate, { toValue: 0, duration: 0, useNativeDriver: true }),
+      ])
+    ).start();
+
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAccent, { toValue: 0.75, duration: 950, useNativeDriver: true }),
+        Animated.timing(pulseAccent, { toValue: 0.35, duration: 950, useNativeDriver: true }),
       ])
     ).start();
   }, []);
+
+  useEffect(() => {
+    if (!exiting) return;
+    Animated.parallel([
+      Animated.timing(exitOpacity, { toValue: 0, duration: 360, useNativeDriver: true }),
+      Animated.timing(exitScale, { toValue: 1.03, duration: 360, useNativeDriver: true }),
+    ]).start();
+  }, [exiting]);
+
+  const spin = rotate.interpolate({
+    inputRange: [0, 1],
+    outputRange: ["0deg", "360deg"],
+  });
+
   return (
-    <Animated.View style={[splash.dot, { transform: [{ translateY: y }] }]} />
+    <Animated.View style={[splash.root, { opacity: exitOpacity, transform: [{ scale: exitScale }] }]}>
+      <LinearGradient
+        colors={brand.gradients.splash}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={StyleSheet.absoluteFillObject}
+      />
+      <Animated.View style={[splash.foldShapeLeft, { opacity: foldOpacity, transform: [{ translateX: foldLeftX }, { rotate: "-22deg" }] }]} />
+      <Animated.View style={[splash.foldShapeRight, { opacity: foldOpacity, transform: [{ translateX: foldRightX }, { rotate: "22deg" }] }]} />
+      <Animated.View style={[splash.foldShapeTop, { opacity: foldOpacity, transform: [{ translateY: foldTopY }, { rotate: "45deg" }] }]} />
+      <Animated.View style={[splash.accentDot, { opacity: pulseAccent }]} />
+      <Animated.View style={[splash.ring, { opacity: ringOpacity, transform: [{ scale: ringScale }, { rotate: spin }] }]} />
+      <Animated.View style={[splash.circle, { transform: [{ scale }, { translateY: floatY }], opacity }]}>
+        <Image source={require("../assets/icon.png")} style={splash.logoImage} resizeMode="contain" />
+        <BrandMark size={88} light />
+      </Animated.View>
+      <Animated.Text style={[splash.name, { opacity: textOpacity, transform: [{ translateY: textY }] }]}>SCJYGM</Animated.Text>
+      <Animated.Text style={[splash.tagline, { opacity: textOpacity, transform: [{ translateY: textY }] }]}>Origami-fast finance with trusted flow</Animated.Text>
+    </Animated.View>
   );
 }
 
 const splash = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: "#1a56db",
     alignItems: "center",
     justifyContent: "center",
+  },
+  foldShapeLeft: {
+    position: "absolute",
+    width: 120,
+    height: 120,
+    borderRadius: 18,
+    backgroundColor: "rgba(255,255,255,0.1)",
+    left: "26%",
+    top: "31%",
+  },
+  foldShapeRight: {
+    position: "absolute",
+    width: 124,
+    height: 124,
+    borderRadius: 18,
+    backgroundColor: "rgba(255,255,255,0.08)",
+    right: "26%",
+    top: "32%",
+  },
+  foldShapeTop: {
+    position: "absolute",
+    width: 84,
+    height: 84,
+    borderRadius: 14,
+    backgroundColor: "rgba(255,122,69,0.32)",
+    top: "23%",
+  },
+  accentDot: {
+    position: "absolute",
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: "#ff7a45",
+    top: "30.5%",
+    right: "34%",
+  },
+  ring: {
+    position: "absolute",
+    width: 198,
+    height: 198,
+    borderRadius: 99,
+    borderWidth: 2,
+    borderColor: "rgba(255,255,255,0.3)",
   },
   circle: {
-    width: 110,
-    height: 110,
-    borderRadius: 55,
-    backgroundColor: "rgba(255,255,255,0.2)",
+    width: 132,
+    height: 132,
+    borderRadius: 66,
+    backgroundColor: "rgba(255,255,255,0.18)",
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 20,
+    marginBottom: 18,
+    borderWidth: 1.5,
+    borderColor: "rgba(255,255,255,0.3)",
   },
-  emoji: { fontSize: 52 },
+  logoImage: {
+    width: 56,
+    height: 56,
+    marginBottom: 8,
+  },
   name: {
-    fontSize: 40,
+    fontSize: 36,
     fontWeight: "800",
     color: "#fff",
-    letterSpacing: 4,
+    letterSpacing: 1.3,
   },
   tagline: {
-    fontSize: 13,
-    color: "rgba(255,255,255,0.7)",
+    fontSize: 12,
+    color: "rgba(255,255,255,0.82)",
     marginTop: 6,
-    letterSpacing: 1,
-    marginBottom: 40,
-  },
-  dotsRow: { flexDirection: "row", gap: 8 },
-  dot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: "rgba(255,255,255,0.8)",
+    letterSpacing: 0.45,
   },
 });

@@ -15,6 +15,7 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { router } from "expo-router";
 import { api } from "@/lib/api";
+import { brand, ui, shadows } from "@/lib/theme";
 
 const STATUS_COLOR: Record<string, string> = {
   DRAFT: "#6b7280",
@@ -33,7 +34,7 @@ export default function MySubmissionsScreen() {
 
   if (isLoading) {
     return (
-      <ActivityIndicator size="large" color="#1a56db" style={{ marginTop: 60 }} />
+      <ActivityIndicator size="large" color={brand.base} style={{ marginTop: 60 }} />
     );
   }
 
@@ -105,7 +106,7 @@ export default function MySubmissionsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f9fafb" },
+  container: { flex: 1, backgroundColor: ui.pageBg },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -113,32 +114,33 @@ const styles = StyleSheet.create({
     padding: 16,
     paddingBottom: 8,
   },
-  title: { fontSize: 22, fontWeight: "700", color: "#111827" },
+  title: { fontSize: 23, fontWeight: "800", color: ui.text },
   addBtn: {
-    backgroundColor: "#1a56db",
-    borderRadius: 8,
+    backgroundColor: brand.base,
+    borderRadius: 10,
     paddingHorizontal: 14,
     paddingVertical: 8,
+    ...shadows.soft,
   },
-  addBtnText: { color: "#fff", fontWeight: "600", fontSize: 14 },
+  addBtnText: { color: "#fff", fontWeight: "800", fontSize: 14 },
   empty: { flex: 1, alignItems: "center", justifyContent: "center", padding: 40 },
-  emptyText: { color: "#6b7280", fontSize: 15, textAlign: "center", marginBottom: 20 },
+  emptyText: { color: ui.textMuted, fontSize: 15, textAlign: "center", marginBottom: 20 },
   ctaBtn: {
-    backgroundColor: "#1a56db",
-    borderRadius: 10,
+    backgroundColor: brand.base,
+    borderRadius: 12,
     paddingHorizontal: 24,
     paddingVertical: 14,
+    ...shadows.soft,
   },
-  ctaBtnText: { color: "#fff", fontWeight: "700", fontSize: 15 },
+  ctaBtnText: { color: "#fff", fontWeight: "800", fontSize: 15 },
   card: {
-    backgroundColor: "#fff",
-    borderRadius: 12,
+    backgroundColor: ui.card,
+    borderRadius: 14,
     padding: 16,
     marginBottom: 12,
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
+    borderWidth: 1,
+    borderColor: ui.border,
+    ...shadows.card,
   },
   cardTop: {
     flexDirection: "row",
@@ -148,8 +150,8 @@ const styles = StyleSheet.create({
   },
   productTitle: {
     fontSize: 15,
-    fontWeight: "600",
-    color: "#111827",
+    fontWeight: "700",
+    color: ui.text,
     flex: 1,
     marginRight: 10,
   },
@@ -159,7 +161,7 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
   },
   badgeText: { fontSize: 11, fontWeight: "700" },
-  meta: { fontSize: 13, color: "#6b7280" },
+  meta: { fontSize: 13, color: ui.textMuted },
   rejectNote: {
     marginTop: 6,
     fontSize: 12,

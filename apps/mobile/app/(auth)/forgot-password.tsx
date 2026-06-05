@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { api } from "../../lib/api";
+import { brand, ui, shadows } from "../../lib/theme";
 
 export default function ForgotPasswordScreen() {
   const router = useRouter();
@@ -38,13 +39,15 @@ export default function ForgotPasswordScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Forgot Password</Text>
-      <Text style={styles.subtitle}>
-        Enter your email and we'll send you a reset link.
-      </Text>
+      <View style={styles.card}>
+        <Text style={styles.title}>Forgot Password</Text>
+        <Text style={styles.subtitle}>
+          Enter your email and we'll send you a reset link.
+        </Text>
       <TextInput
         style={styles.input}
         placeholder="Email"
+        placeholderTextColor="#8ea0d2"
         value={email}
         onChangeText={setEmail}
         keyboardType="email-address"
@@ -60,29 +63,41 @@ export default function ForgotPasswordScreen() {
       <TouchableOpacity onPress={() => router.back()}>
         <Text style={styles.link}>Back to Sign In</Text>
       </TouchableOpacity>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: "center", padding: 24, backgroundColor: "#fff" },
-  title: { fontSize: 28, fontWeight: "bold", color: "#1a56db", marginBottom: 8 },
-  subtitle: { color: "#6b7280", marginBottom: 24 },
+  container: { flex: 1, justifyContent: "center", padding: 20, backgroundColor: ui.pageBg },
+  card: {
+    backgroundColor: ui.card,
+    borderRadius: 18,
+    padding: 18,
+    borderWidth: 1,
+    borderColor: ui.border,
+    ...shadows.card,
+  },
+  title: { fontSize: 28, fontWeight: "800", color: brand.base, marginBottom: 8 },
+  subtitle: { color: ui.textMuted, marginBottom: 24, lineHeight: 19 },
   input: {
     borderWidth: 1,
-    borderColor: "#d1d5db",
-    borderRadius: 8,
+    borderColor: ui.border,
+    borderRadius: 12,
     padding: 12,
     fontSize: 16,
     marginBottom: 16,
+    backgroundColor: "#f8faff",
+    color: ui.text,
   },
   btn: {
-    backgroundColor: "#1a56db",
-    borderRadius: 8,
+    backgroundColor: brand.base,
+    borderRadius: 12,
     padding: 14,
     alignItems: "center",
     marginBottom: 16,
+    ...shadows.soft,
   },
-  btnText: { color: "#fff", fontSize: 16, fontWeight: "600" },
-  link: { color: "#1a56db", textAlign: "center" },
+  btnText: { color: "#fff", fontSize: 16, fontWeight: "800" },
+  link: { color: brand.base, textAlign: "center", fontWeight: "700" },
 });

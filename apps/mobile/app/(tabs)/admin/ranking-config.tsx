@@ -18,6 +18,7 @@ import {
 } from "react-native";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
+import { brand, ui, shadows } from "@/lib/theme";
 
 interface RankingConfig {
   priorStrength: number;
@@ -66,7 +67,7 @@ export default function RankingConfigScreen() {
   });
 
   if (isLoading || !form) {
-    return <ActivityIndicator size="large" color="#1a56db" style={{ marginTop: 60 }} />;
+    return <ActivityIndicator size="large" color={brand.base} style={{ marginTop: 60 }} />;
   }
 
   function num(key: keyof RankingConfig, v: string) {
@@ -153,7 +154,7 @@ export default function RankingConfigScreen() {
           <Switch
             value={form.personalizationEnabled}
             onValueChange={(v) => setForm((f) => f ? ({ ...f, personalizationEnabled: v }) : f)}
-            trackColor={{ true: "#1a56db" }}
+            trackColor={{ true: brand.base }}
           />
         </View>
         <View style={styles.row2}>
@@ -194,22 +195,22 @@ export default function RankingConfigScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f9fafb" },
+  container: { flex: 1, backgroundColor: ui.pageBg },
   content: { padding: 16, paddingBottom: 60 },
-  section: { fontSize: 16, fontWeight: "800", color: "#111827", marginTop: 20, marginBottom: 10 },
+  section: { fontSize: 16, fontWeight: "800", color: ui.text, marginTop: 20, marginBottom: 10 },
   row2: { flexDirection: "row", gap: 10 },
   field: { flex: 1, marginBottom: 8 },
-  fieldLabel: { fontSize: 12, fontWeight: "600", color: "#6b7280", marginBottom: 4 },
-  input: { backgroundColor: "#fff", borderWidth: 1, borderColor: "#d1d5db", borderRadius: 8, paddingHorizontal: 10, paddingVertical: 10, fontSize: 14, color: "#111827" },
+  fieldLabel: { fontSize: 12, fontWeight: "600", color: ui.textMuted, marginBottom: 4 },
+  input: { backgroundColor: ui.card, borderWidth: 1, borderColor: ui.border, borderRadius: 10, paddingHorizontal: 10, paddingVertical: 10, fontSize: 14, color: ui.text },
   inputDisabled: { backgroundColor: "#f3f4f6", color: "#9ca3af" },
-  hint: { fontSize: 13, color: "#6b7280", marginBottom: 8, fontWeight: "600" },
+  hint: { fontSize: 13, color: ui.textMuted, marginBottom: 8, fontWeight: "600" },
   chipRow: { flexDirection: "row", gap: 8, marginBottom: 10 },
-  chip: { borderWidth: 1, borderColor: "#d1d5db", borderRadius: 16, paddingHorizontal: 14, paddingVertical: 6, backgroundColor: "#fff" },
-  chipActive: { backgroundColor: "#1a56db", borderColor: "#1a56db" },
-  chipText: { fontSize: 13, color: "#374151", fontWeight: "600" },
+  chip: { borderWidth: 1, borderColor: ui.border, borderRadius: 16, paddingHorizontal: 14, paddingVertical: 6, backgroundColor: ui.card },
+  chipActive: { backgroundColor: brand.base, borderColor: brand.base },
+  chipText: { fontSize: 13, color: "#334155", fontWeight: "600" },
   chipTextActive: { color: "#fff" },
   switchRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 10 },
-  saveBtn: { backgroundColor: "#1a56db", borderRadius: 12, paddingVertical: 16, alignItems: "center", marginTop: 24 },
+  saveBtn: { backgroundColor: brand.base, borderRadius: 12, paddingVertical: 16, alignItems: "center", marginTop: 24, ...shadows.soft },
   saveBtnText: { color: "#fff", fontSize: 16, fontWeight: "700" },
   disabled: { opacity: 0.6 },
 });

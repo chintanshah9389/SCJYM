@@ -20,6 +20,7 @@ import {
 import { Tabs } from "expo-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
+import { brand, ui, shadows } from "@/lib/theme";
 
 type AdminUser = {
   id: string;
@@ -250,7 +251,7 @@ ${"═".repeat(40)}
               onChangeText={setUserSearch}
             />
             {usersLoading ? (
-              <ActivityIndicator color="#1a56db" />
+              <ActivityIndicator color={brand.base} />
             ) : (
               <FlatList
                 data={filteredUsers}
@@ -376,51 +377,53 @@ ${"═".repeat(40)}
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: "#f9fafb" },
+  root: { flex: 1, backgroundColor: ui.pageBg },
   tabBar: {
     flexDirection: "row",
-    backgroundColor: "#fff",
+    backgroundColor: ui.card,
     borderBottomWidth: 1,
-    borderBottomColor: "#e5e7eb",
+    borderBottomColor: ui.border,
   },
   tab: { flex: 1, paddingVertical: 14, alignItems: "center", borderBottomWidth: 3, borderBottomColor: "transparent" },
-  tabActive: { borderBottomColor: "#1a56db" },
-  tabText: { fontSize: 14, fontWeight: "600", color: "#9ca3af" },
-  tabTextActive: { color: "#1a56db" },
+  tabActive: { borderBottomColor: brand.base },
+  tabText: { fontSize: 14, fontWeight: "600", color: ui.textMuted },
+  tabTextActive: { color: brand.base },
   body: { padding: 16, paddingBottom: 40 },
   section: { marginBottom: 20 },
-  sectionTitle: { fontSize: 14, fontWeight: "700", color: "#111827", marginBottom: 8 },
+  sectionTitle: { fontSize: 14, fontWeight: "700", color: ui.text, marginBottom: 8 },
   input: {
-    backgroundColor: "#fff",
+    backgroundColor: ui.card,
     borderWidth: 1,
-    borderColor: "#e5e7eb",
-    borderRadius: 10,
+    borderColor: ui.border,
+    borderRadius: 12,
     padding: 12,
     fontSize: 14,
-    color: "#111827",
+    color: ui.text,
   },
   inputLarge: { minHeight: 100 },
-  infoBox: { backgroundColor: "#f3f4f6", borderRadius: 10, padding: 12 },
+  infoBox: { backgroundColor: "#eef2ff", borderRadius: 12, padding: 12 },
   infoLabel: { fontSize: 12, color: "#9ca3af", fontWeight: "600" },
-  infoValue: { fontSize: 18, fontWeight: "700", color: "#1a56db", marginTop: 4 },
+  infoValue: { fontSize: 18, fontWeight: "700", color: brand.base, marginTop: 4 },
   searchInput: {
-    backgroundColor: "#fff",
+    backgroundColor: ui.card,
     borderWidth: 1,
-    borderColor: "#e5e7eb",
-    borderRadius: 10,
+    borderColor: ui.border,
+    borderRadius: 12,
     padding: 12,
     fontSize: 14,
-    color: "#111827",
+    color: ui.text,
     marginBottom: 12,
   },
   userItem: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#fff",
-    borderRadius: 10,
+    backgroundColor: ui.card,
+    borderRadius: 12,
     padding: 12,
     marginBottom: 8,
     gap: 12,
+    borderWidth: 1,
+    borderColor: ui.border,
   },
   checkbox: {
     width: 24,
@@ -431,10 +434,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  checkboxActive: { backgroundColor: "#1a56db", borderColor: "#1a56db" },
+  checkboxActive: { backgroundColor: brand.base, borderColor: brand.base },
   checkmark: { color: "#fff", fontSize: 12, fontWeight: "700" },
   userInfo: { flex: 1 },
-  userName: { fontSize: 14, fontWeight: "600", color: "#111827" },
+  userName: { fontSize: 14, fontWeight: "600", color: ui.text },
   userMeta: { fontSize: 12, color: "#9ca3af", marginTop: 2 },
   switchRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 12 },
   toggle: {
@@ -445,27 +448,28 @@ const styles = StyleSheet.create({
     padding: 2,
     justifyContent: "center",
   },
-  toggleActive: { backgroundColor: "#1a56db" },
+  toggleActive: { backgroundColor: brand.base },
   toggleBall: { width: 24, height: 24, borderRadius: 12, backgroundColor: "#fff", alignSelf: "flex-start" },
   toggleBallActive: { alignSelf: "flex-end" },
   actionRow: { flexDirection: "row", gap: 12 },
   btn: { flex: 1, borderRadius: 10, paddingVertical: 12, alignItems: "center" },
-  btnPrimary: { backgroundColor: "#1a56db" },
-  btnSecondary: { backgroundColor: "#fff", borderWidth: 1, borderColor: "#e5e7eb" },
+  btnPrimary: { backgroundColor: brand.base, ...shadows.soft },
+  btnSecondary: { backgroundColor: ui.card, borderWidth: 1, borderColor: ui.border },
   btnText: { color: "#fff", fontWeight: "700", fontSize: 14 },
-  btnSecondaryText: { color: "#1a56db", fontWeight: "700", fontSize: 14 },
+  btnSecondaryText: { color: brand.base, fontWeight: "700", fontSize: 14 },
   preview: { padding: 16, paddingBottom: 40 },
   receiptPreview: {
-    backgroundColor: "#fff",
-    borderRadius: 12,
+    backgroundColor: ui.card,
+    borderRadius: 14,
     padding: 16,
     borderWidth: 1,
-    borderColor: "#e5e7eb",
+    borderColor: ui.border,
+    ...shadows.card,
   },
   receiptText: {
     fontFamily: Platform.OS === "ios" ? "Courier New" : "monospace",
     fontSize: 12,
-    color: "#111827",
+    color: ui.text,
     lineHeight: 18,
   },
 });

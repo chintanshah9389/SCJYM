@@ -9,6 +9,7 @@ import {
 } from "react-native";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../lib/api";
+import { brand, ui, shadows } from "../../lib/theme";
 
 type NotificationItem = {
   id: string;
@@ -107,7 +108,7 @@ export default function NotificationsScreen() {
     pendingReadRef.current = null;
   }
 
-  if (isLoading) return <ActivityIndicator size="large" color="#1a56db" style={{ marginTop: 60 }} />;
+  if (isLoading) return <ActivityIndicator size="large" color={brand.base} style={{ marginTop: 60 }} />;
 
   return (
     <View style={styles.container}>
@@ -143,26 +144,36 @@ export default function NotificationsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f9fafb" },
-  empty: { textAlign: "center", marginTop: 60, color: "#9ca3af", fontSize: 16 },
-  item: { backgroundColor: "#fff", margin: 8, borderRadius: 10, padding: 14, elevation: 1 },
-  unread: { borderLeftWidth: 4, borderLeftColor: "#1a56db" },
-  title: { fontSize: 15, fontWeight: "600", color: "#111827" },
-  body: { fontSize: 13, color: "#6b7280", marginTop: 4 },
-  time: { fontSize: 11, color: "#9ca3af", marginTop: 6 },
+  container: { flex: 1, backgroundColor: ui.pageBg, paddingTop: 6 },
+  empty: { textAlign: "center", marginTop: 60, color: ui.textMuted, fontSize: 16 },
+  item: {
+    backgroundColor: ui.card,
+    marginHorizontal: 10,
+    marginBottom: 10,
+    borderRadius: 14,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: ui.border,
+    ...shadows.soft,
+  },
+  unread: { borderLeftWidth: 4, borderLeftColor: brand.base, backgroundColor: brand.tint },
+  title: { fontSize: 15, fontWeight: "700", color: ui.text },
+  body: { fontSize: 13, color: ui.textMuted, marginTop: 4, lineHeight: 18 },
+  time: { fontSize: 11, color: "#8794b5", marginTop: 6, fontWeight: "600" },
   undoBar: {
     position: "absolute",
     left: 12,
     right: 12,
     bottom: 16,
-    backgroundColor: "#111827",
-    borderRadius: 10,
+    backgroundColor: "#0f172a",
+    borderRadius: 12,
     paddingHorizontal: 14,
     paddingVertical: 12,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+    ...shadows.card,
   },
   undoText: { color: "#f9fafb", fontSize: 13, fontWeight: "500" },
-  undoAction: { color: "#60a5fa", fontSize: 13, fontWeight: "700" },
+  undoAction: { color: "#93c5fd", fontSize: 13, fontWeight: "800" },
 });

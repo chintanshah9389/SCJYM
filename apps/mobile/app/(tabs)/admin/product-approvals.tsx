@@ -16,6 +16,7 @@ import {
 } from "react-native";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
+import { brand, ui, shadows } from "@/lib/theme";
 
 export default function ProductApprovalsScreen() {
   const qc = useQueryClient();
@@ -41,7 +42,7 @@ export default function ProductApprovalsScreen() {
   return (
     <View style={styles.container}>
       {isLoading ? (
-        <ActivityIndicator size="large" color="#1a56db" style={{ marginTop: 40 }} />
+        <ActivityIndicator size="large" color={brand.base} style={{ marginTop: 40 }} />
       ) : (
         <FlatList
           data={products}
@@ -136,34 +137,36 @@ export default function ProductApprovalsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f9fafb" },
+  container: { flex: 1, backgroundColor: ui.pageBg },
   card: {
-    backgroundColor: "#fff",
-    borderRadius: 12,
+    backgroundColor: ui.card,
+    borderRadius: 14,
     padding: 14,
     marginBottom: 12,
-    elevation: 2,
+    borderWidth: 1,
+    borderColor: ui.border,
+    ...shadows.card,
   },
-  name: { fontSize: 16, fontWeight: "700", color: "#111827", marginBottom: 4 },
-  sub: { fontSize: 13, color: "#6b7280" },
-  desc: { fontSize: 13, color: "#374151", marginTop: 6, fontStyle: "italic" },
+  name: { fontSize: 16, fontWeight: "700", color: ui.text, marginBottom: 4 },
+  sub: { fontSize: 13, color: ui.textMuted },
+  desc: { fontSize: 13, color: "#334155", marginTop: 6, fontStyle: "italic" },
   date: { fontSize: 12, color: "#9ca3af", marginTop: 4, marginBottom: 10 },
   actions: { flexDirection: "row", gap: 10 },
   approveBtn: { flex: 1, backgroundColor: "#059669", borderRadius: 8, paddingVertical: 10, alignItems: "center" },
   rejectBtn: { flex: 1, backgroundColor: "#dc2626", borderRadius: 8, paddingVertical: 10, alignItems: "center" },
   btnText: { color: "#fff", fontWeight: "700", fontSize: 13 },
-  empty: { textAlign: "center", marginTop: 60, color: "#9ca3af", fontSize: 15 },
-  pagination: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", padding: 12, borderTopWidth: 1, borderColor: "#f3f4f6" },
-  pageBtn: { fontSize: 15, color: "#1a56db", fontWeight: "600", paddingHorizontal: 8 },
-  pageInfo: { fontSize: 13, color: "#6b7280" },
+  empty: { textAlign: "center", marginTop: 60, color: ui.textMuted, fontSize: 15 },
+  pagination: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", padding: 12, borderTopWidth: 1, borderColor: ui.border },
+  pageBtn: { fontSize: 15, color: brand.base, fontWeight: "700", paddingHorizontal: 8 },
+  pageInfo: { fontSize: 13, color: ui.textMuted },
   disabled: { color: "#d1d5db" },
   modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.45)", justifyContent: "flex-end" },
-  modalBox: { backgroundColor: "#fff", borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 24 },
-  modalTitle: { fontSize: 18, fontWeight: "700", color: "#111827", marginBottom: 4 },
-  modalSub: { fontSize: 14, color: "#6b7280", marginBottom: 14 },
-  reasonInput: { borderWidth: 1, borderColor: "#d1d5db", borderRadius: 10, padding: 12, fontSize: 14, height: 100, color: "#111827" },
+  modalBox: { backgroundColor: ui.card, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 24, borderTopWidth: 1, borderColor: ui.border },
+  modalTitle: { fontSize: 18, fontWeight: "700", color: ui.text, marginBottom: 4 },
+  modalSub: { fontSize: 14, color: ui.textMuted, marginBottom: 14 },
+  reasonInput: { borderWidth: 1, borderColor: ui.border, borderRadius: 10, padding: 12, fontSize: 14, height: 100, color: ui.text, backgroundColor: "#f8faff" },
   modalActions: { flexDirection: "row", gap: 12, marginTop: 16 },
-  cancelBtn: { flex: 1, borderWidth: 1, borderColor: "#d1d5db", borderRadius: 10, paddingVertical: 12, alignItems: "center" },
-  cancelBtnText: { fontSize: 14, color: "#374151", fontWeight: "600" },
+  cancelBtn: { flex: 1, borderWidth: 1, borderColor: ui.border, borderRadius: 10, paddingVertical: 12, alignItems: "center", backgroundColor: "#f8faff" },
+  cancelBtnText: { fontSize: 14, color: "#334155", fontWeight: "600" },
   confirmRejectBtn: { flex: 1, backgroundColor: "#dc2626", borderRadius: 10, paddingVertical: 12, alignItems: "center" },
 });

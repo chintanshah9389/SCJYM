@@ -25,6 +25,7 @@ const SCREEN_WIDTH = Dimensions.get("window").width;
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
+import { brand, ui, shadows } from "@/lib/theme";
 
 interface Product {
   id: string;
@@ -74,7 +75,7 @@ export default function ProductDetailScreen() {
   if (isLoading) {
     return (
       <SafeAreaView style={styles.container}>
-        <ActivityIndicator size="large" color="#1a56db" style={{ marginTop: 60 }} />
+        <ActivityIndicator size="large" color={brand.base} style={{ marginTop: 60 }} />
       </SafeAreaView>
     );
   }
@@ -255,52 +256,52 @@ export default function ProductDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f9fafb" },
+  container: { flex: 1, backgroundColor: ui.pageBg },
   content: { paddingBottom: 40 },
   header: { flexDirection: "row", justifyContent: "flex-start", paddingHorizontal: 16, paddingVertical: 12 },
-  backText: { fontSize: 16, color: "#1a56db", fontWeight: "600" },
-  backBtn: { backgroundColor: "#eff6ff", borderRadius: 8, paddingHorizontal: 16, paddingVertical: 10, alignItems: "center" },
-  backBtnText: { color: "#1a56db", fontWeight: "600", fontSize: 14 },
+  backText: { fontSize: 16, color: brand.base, fontWeight: "700" },
+  backBtn: { backgroundColor: brand.tint, borderRadius: 10, paddingHorizontal: 16, paddingVertical: 10, alignItems: "center" },
+  backBtnText: { color: brand.base, fontWeight: "700", fontSize: 14 },
   errorContainer: { flex: 1, justifyContent: "center", alignItems: "center", gap: 20 },
-  errorText: { fontSize: 18, color: "#ef4444", fontWeight: "600" },
+  errorText: { fontSize: 18, color: ui.danger, fontWeight: "700" },
 
   /* Gallery */
   gallerySection: { paddingHorizontal: 16, marginBottom: 24 },
   mainImage: { width: SCREEN_WIDTH - 32, height: 320, borderRadius: 16, backgroundColor: "#e5e7eb" },
   dotsRow: { flexDirection: "row", justifyContent: "center", gap: 6, marginTop: 10 },
-  dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: "#d1d5db" },
-  dotActive: { backgroundColor: "#1a56db", width: 20, borderRadius: 4 },
+  dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: "#c3d0f1" },
+  dotActive: { backgroundColor: brand.base, width: 20, borderRadius: 4 },
   thumbnailRow: { paddingVertical: 12, gap: 8 },
-  thumbnail: { width: 60, height: 60, borderRadius: 8, borderWidth: 2, borderColor: "#e5e7eb", overflow: "hidden" },
-  thumbnailActive: { borderColor: "#1a56db" },
+  thumbnail: { width: 60, height: 60, borderRadius: 8, borderWidth: 2, borderColor: ui.border, overflow: "hidden" },
+  thumbnailActive: { borderColor: brand.base },
   thumbnailImage: { width: "100%", height: "100%" },
 
   /* Info */
   infoSection: { paddingHorizontal: 16, marginBottom: 24 },
-  title: { fontSize: 22, fontWeight: "700", color: "#111827", marginBottom: 8 },
+  title: { fontSize: 23, fontWeight: "800", color: ui.text, marginBottom: 8 },
   metaRow: { flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 12 },
-  category: { backgroundColor: "#eff6ff", color: "#1a56db", paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6, fontSize: 12, fontWeight: "600" },
-  rating: { fontSize: 13, color: "#6b7280" },
+  category: { backgroundColor: brand.tint, color: brand.base, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6, fontSize: 12, fontWeight: "700" },
+  rating: { fontSize: 13, color: ui.textMuted },
   priceSection: { marginBottom: 16, gap: 6 },
-  price: { fontSize: 26, fontWeight: "700", color: "#1a56db" },
+  price: { fontSize: 26, fontWeight: "800", color: brand.base },
   stock: { fontSize: 13, fontWeight: "600" },
   inStock: { color: "#059669" },
   outOfStock: { color: "#dc2626" },
   descSection: { marginBottom: 20 },
-  descTitle: { fontSize: 14, fontWeight: "700", color: "#374151", marginBottom: 6 },
-  description: { fontSize: 14, color: "#6b7280", lineHeight: 20 },
-  sellerSection: { backgroundColor: "#f3f4f6", borderRadius: 10, padding: 12, marginBottom: 16 },
+  descTitle: { fontSize: 14, fontWeight: "700", color: "#334155", marginBottom: 6 },
+  description: { fontSize: 14, color: ui.textMuted, lineHeight: 20 },
+  sellerSection: { backgroundColor: ui.card, borderRadius: 12, padding: 12, marginBottom: 16, borderWidth: 1, borderColor: ui.border },
   sellerLabel: { fontSize: 12, color: "#9ca3af", fontWeight: "600", marginBottom: 2 },
-  sellerName: { fontSize: 15, fontWeight: "600", color: "#111827" },
+  sellerName: { fontSize: 15, fontWeight: "700", color: ui.text },
 
   /* Actions */
   actionSection: { paddingHorizontal: 16, gap: 12 },
   quantityRow: { gap: 12 },
-  quantityLabel: { fontSize: 14, fontWeight: "600", color: "#374151" },
-  quantityInput: { flexDirection: "row", alignItems: "center", backgroundColor: "#fff", borderRadius: 10, borderWidth: 1, borderColor: "#e5e7eb", overflow: "hidden" },
+  quantityLabel: { fontSize: 14, fontWeight: "700", color: "#334155" },
+  quantityInput: { flexDirection: "row", alignItems: "center", backgroundColor: ui.card, borderRadius: 12, borderWidth: 1, borderColor: ui.border, overflow: "hidden" },
   qtyBtn: { width: 40, height: 40, alignItems: "center", justifyContent: "center" },
-  qtyBtnText: { fontSize: 18, fontWeight: "700", color: "#1a56db" },
-  qtyField: { flex: 1, textAlign: "center", fontSize: 16, fontWeight: "600", color: "#111827" },
-  addCartBtn: { backgroundColor: "#1a56db", borderRadius: 10, paddingVertical: 14, alignItems: "center", justifyContent: "center" },
-  addCartBtnText: { color: "#fff", fontSize: 16, fontWeight: "700" },
+  qtyBtnText: { fontSize: 18, fontWeight: "800", color: brand.base },
+  qtyField: { flex: 1, textAlign: "center", fontSize: 16, fontWeight: "700", color: ui.text },
+  addCartBtn: { backgroundColor: brand.base, borderRadius: 12, paddingVertical: 14, alignItems: "center", justifyContent: "center", ...shadows.soft },
+  addCartBtnText: { color: "#fff", fontSize: 16, fontWeight: "800" },
 });

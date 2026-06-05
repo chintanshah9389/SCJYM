@@ -15,6 +15,7 @@ import {
 } from "react-native";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
+import { brand, ui, shadows } from "@/lib/theme";
 
 export default function UserApprovalsScreen() {
   const qc = useQueryClient();
@@ -66,7 +67,7 @@ export default function UserApprovalsScreen() {
       />
 
       {isLoading ? (
-        <ActivityIndicator size="large" color="#1a56db" style={{ marginTop: 40 }} />
+        <ActivityIndicator size="large" color={brand.base} style={{ marginTop: 40 }} />
       ) : (
         <FlatList
           data={users}
@@ -124,39 +125,42 @@ export default function UserApprovalsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f9fafb" },
+  container: { flex: 1, backgroundColor: ui.pageBg },
   search: {
     margin: 12,
     borderWidth: 1,
-    borderColor: "#d1d5db",
-    borderRadius: 10,
+    borderColor: ui.border,
+    borderRadius: 12,
     paddingHorizontal: 14,
     paddingVertical: 10,
     fontSize: 14,
-    backgroundColor: "#fff",
-    color: "#111827",
+    backgroundColor: ui.card,
+    color: ui.text,
+    ...shadows.soft,
   },
   card: {
-    backgroundColor: "#fff",
+    backgroundColor: ui.card,
     marginHorizontal: 12,
     marginBottom: 10,
-    borderRadius: 12,
+    borderRadius: 14,
     padding: 14,
-    elevation: 2,
+    borderWidth: 1,
+    borderColor: ui.border,
     flexDirection: "row",
     gap: 10,
+    ...shadows.card,
   },
   cardBody: { flex: 1 },
-  name: { fontSize: 15, fontWeight: "700", color: "#111827", marginBottom: 2 },
-  sub: { fontSize: 13, color: "#6b7280" },
+  name: { fontSize: 15, fontWeight: "700", color: ui.text, marginBottom: 2 },
+  sub: { fontSize: 13, color: ui.textMuted },
   date: { fontSize: 12, color: "#9ca3af", marginTop: 4 },
   actions: { gap: 8, justifyContent: "center" },
   approveBtn: { backgroundColor: "#059669", borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8 },
   rejectBtn: { backgroundColor: "#dc2626", borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8 },
   btnText: { color: "#fff", fontSize: 12, fontWeight: "700" },
-  empty: { textAlign: "center", marginTop: 60, color: "#9ca3af", fontSize: 15 },
-  pagination: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", padding: 12, borderTopWidth: 1, borderColor: "#f3f4f6" },
-  pageBtn: { fontSize: 15, color: "#1a56db", fontWeight: "600", paddingHorizontal: 8 },
-  pageInfo: { fontSize: 13, color: "#6b7280" },
+  empty: { textAlign: "center", marginTop: 60, color: ui.textMuted, fontSize: 15 },
+  pagination: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", padding: 12, borderTopWidth: 1, borderColor: ui.border },
+  pageBtn: { fontSize: 15, color: brand.base, fontWeight: "700", paddingHorizontal: 8 },
+  pageInfo: { fontSize: 13, color: ui.textMuted },
   disabled: { color: "#d1d5db" },
 });
