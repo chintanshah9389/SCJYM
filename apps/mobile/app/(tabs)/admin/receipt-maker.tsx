@@ -177,6 +177,23 @@ ${"═".repeat(40)}
       .replace(/'/g, "&#039;");
   }
 
+  async function toDataUri(uri: string): Promise<string> {
+    if (!uri) return "";
+    if (uri.startsWith("data:")) return uri;
+    try {
+      const response = await fetch(uri);
+      const blob = await response.blob();
+      return await new Promise<string>((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(typeof reader.result === "string" ? reader.result : "");
+        reader.onerror = () => resolve("");
+        reader.readAsDataURL(blob);
+      });
+    } catch {
+      return "";
+    }
+  }
+
   async function shareReceiptPdf() {
     if (!bodyText.trim()) {
       Alert.alert("Validation", "Please add message to receipt body");
@@ -185,7 +202,10 @@ ${"═".repeat(40)}
 
     try {
       const sharedText = receiptContent;
-      const logoUri = Image.resolveAssetSource(require("../../../assets/icon.png"))?.uri ?? "";
+      const resolvedLogoUri =
+        Image.resolveAssetSource(require("../../../assets/favicon.png"))?.uri ?? "";
+      const embeddedLogoUri = await toDataUri(resolvedLogoUri);
+      const logoUri = embeddedLogoUri;
       const now = new Date();
       const dateStr = now.toLocaleDateString("en-IN");
       const timeStr = now.toLocaleTimeString("en-IN");
@@ -236,6 +256,20 @@ ${"═".repeat(40)}
                 border: 1px solid #dbe5f0;
                 object-fit: contain;
                 background: #ffffff;
+              }
+              .logoFallback {
+                width: 56px;
+                height: 56px;
+                border-radius: 12px;
+                border: 1px solid #dbe5f0;
+                display: none;
+                align-items: center;
+                justify-content: center;
+                background: #1d4ed8;
+                color: #ffffff;
+                font-size: 18px;
+                font-weight: 800;
+                letter-spacing: 0.5px;
               }
               .brandTitle {
                 margin: 0;
@@ -295,23 +329,20 @@ ${"═".repeat(40)}
                 color: #111827;
                 white-space: normal;
               }
-              .raw {
-                margin-top: 16px;
-                border-radius: 12px;
-                border: 1px dashed #cbd5e1;
-                background: #f8fafc;
-                padding: 12px;
-                font-family: "Courier New", monospace;
-                font-size: 12px;
-                line-height: 1.45;
-                white-space: pre-wrap;
+              .footer {
+                margin-top: 14px;
+                color: #64748b;
+                font-size: 11px;
+                text-align: right;
               }
             </style>
           </head>
           <body>
             <div class="card">
               <div class="head">
-                ${logoUri ? `<img class="logo" src="${logoUri}" alt="SCJYM logo" />` : ""}
+                ${logoUri
+                  ? `<img class="logo" src="${logoUri}" alt="SCJYM logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" /><div class="logoFallback">SJ</div>`
+                  : `<div class="logoFallback" style="display:flex;">SJ</div>`}
                 <div>
                   <p class="brandTitle">SCJYM</p>
                   <p class="brandSub">Official Receipt</p>
@@ -331,8 +362,7 @@ ${"═".repeat(40)}
 
               <div class="headline">${escapeHtml(header || "Receipt Confirmation")}</div>
               <div class="msg">${safeMessageHtml}</div>
-
-              <div class="raw">${escapeHtml(sharedText)}</div>
+              <div class="footer">Receipt ${escapeHtml(receiptNum)}</div>
             </div>
           </body>
         </html>
