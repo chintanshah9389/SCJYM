@@ -5,19 +5,22 @@ import { TouchableOpacity, View, Text, StyleSheet } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useAuth } from "../../context/AuthContext";
 import DrawerMenu from "../../components/DrawerMenu";
-import { brand, ui, shadows } from "../../lib/theme";
+import { shadows } from "../../lib/theme";
+import { useAppTheme } from "../../context/ThemeContext";
 
 function HamburgerButton({ onPress }: { onPress: () => void }) {
+  const { theme } = useAppTheme();
   return (
     <TouchableOpacity onPress={onPress} style={styles.hamburger}>
-      <View style={styles.bar} />
-      <View style={[styles.bar, { width: 18 }]} />
-      <View style={styles.bar} />
+      <View style={[styles.bar, { backgroundColor: theme.ui.card }]} />
+      <View style={[styles.bar, { width: 18, backgroundColor: theme.ui.card }]} />
+      <View style={[styles.bar, { backgroundColor: theme.ui.card }]} />
     </TouchableOpacity>
   );
 }
 
 export default function TabsLayout() {
+  const { theme } = useAppTheme();
   const { user } = useAuth();
   const isAdmin = user?.role === "ADMIN" || user?.role === "SUPER_ADMIN";
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -26,7 +29,7 @@ export default function TabsLayout() {
 
   const gradientHeader = () => (
     <LinearGradient
-      colors={brand.gradients.header}
+      colors={theme.brand.gradients.header}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
       style={StyleSheet.absoluteFillObject}
@@ -35,7 +38,7 @@ export default function TabsLayout() {
 
   const gradientTabBar = () => (
     <LinearGradient
-      colors={brand.gradients.tabBar}
+      colors={theme.brand.gradients.tabBar}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
       style={StyleSheet.absoluteFillObject}
@@ -47,15 +50,15 @@ export default function TabsLayout() {
       <DrawerMenu visible={drawerOpen} onClose={() => setDrawerOpen(false)} />
       <Tabs
         screenOptions={{
-          tabBarActiveTintColor: brand.base,
-          tabBarInactiveTintColor: "#b88b92",
-          tabBarStyle: styles.tabBar,
+          tabBarActiveTintColor: theme.brand.base,
+          tabBarInactiveTintColor: theme.ui.textMuted,
+          tabBarStyle: [styles.tabBar, { borderColor: theme.ui.border }],
           tabBarLabelStyle: styles.tabLabel,
           tabBarBackground: gradientTabBar,
           headerShown: true,
           headerStyle: styles.header,
           headerBackground: gradientHeader,
-          headerTintColor: ui.card,
+          headerTintColor: theme.ui.card,
           headerTitleStyle: styles.headerTitle,
         }}
       >
@@ -67,8 +70,11 @@ export default function TabsLayout() {
             tabBarIcon: ({ color }) => <Ionicons name="home-outline" size={22} color={color} />,
             headerLeft: hamburger,
             headerRight: () => (
-              <TouchableOpacity style={styles.notifBtn} onPress={() => {}}>
-                <Ionicons name="notifications-outline" size={22} color="#fff" />
+              <TouchableOpacity
+                style={[styles.notifBtn, { backgroundColor: theme.brand.soft }]}
+                onPress={() => {}}
+              >
+                <Ionicons name="notifications-outline" size={22} color={theme.ui.card} />
               </TouchableOpacity>
             ),
           }}
@@ -205,7 +211,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.2,
   },
   hamburger: { paddingHorizontal: 16, paddingVertical: 8, gap: 4, alignItems: "flex-start" },
-  bar: { width: 22, height: 2.5, backgroundColor: ui.card, borderRadius: 2 },
+  bar: { width: 22, height: 2.5, borderRadius: 2 },
   notifBtn: {
     marginRight: 12,
     width: 34,

@@ -5,9 +5,9 @@ import { LinearGradient } from "expo-linear-gradient";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider, useAuth } from "../context/AuthContext";
 import { ToastProvider } from "../context/ToastContext";
+import { ThemeProvider, useAppTheme } from "../context/ThemeContext";
 import { useRouter, useSegments } from "expo-router";
 import { toastEmitter } from "../lib/toastEmitter";
-import { brand } from "../lib/theme";
 import BrandMark from "../components/BrandMark";
 
 const queryClient = new QueryClient();
@@ -15,16 +15,19 @@ const queryClient = new QueryClient();
 function RootLayout() {
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <ToastProvider>
-          <RootNavigator />
-        </ToastProvider>
-      </AuthProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <ToastProvider>
+            <RootNavigator />
+          </ToastProvider>
+        </AuthProvider>
+      </ThemeProvider>
     </QueryClientProvider>
   );
 }
 
 function RootNavigator() {
+  const { theme } = useAppTheme();
   const { user, isLoading, logout } = useAuth();
   const router = useRouter();
   const segments = useSegments();
@@ -100,13 +103,15 @@ function RootNavigator() {
     };
   }, [user]);
 
-  if (isLoading || showStinger) return <SplashScreen exiting={stingerExiting && !isLoading} />;
+  if (isLoading || showStinger) {
+    return <SplashScreen exiting={stingerExiting && !isLoading} splashColors={theme.brand.gradients.splash} />;
+  }
 
   return (
     <Stack
       screenOptions={{
         headerShown: false,
-        headerStyle: { backgroundColor: brand.base },
+        headerStyle: { backgroundColor: theme.brand.base },
         headerTintColor: "#fff",
         headerTitleStyle: { fontWeight: "700" },
         headerBackTitle: "",
@@ -119,7 +124,13 @@ function RootNavigator() {
 
 export default RootLayout;
 
-function SplashScreen({ exiting = false }: { exiting?: boolean }) {
+function SplashScreen({
+  exiting = false,
+  splashColors,
+}: {
+  exiting?: boolean;
+  splashColors: readonly [string, string, string];
+}) {
   const scale = useRef(new Animated.Value(0.82)).current;
   const opacity = useRef(new Animated.Value(0)).current;
   const exitOpacity = useRef(new Animated.Value(1)).current;
@@ -203,7 +214,7 @@ function SplashScreen({ exiting = false }: { exiting?: boolean }) {
   return (
     <Animated.View style={[splash.root, { opacity: exitOpacity, transform: [{ scale: exitScale }] }]}>
       <LinearGradient
-        colors={brand.gradients.splash}
+        colors={splashColors}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={StyleSheet.absoluteFillObject}

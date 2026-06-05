@@ -18,7 +18,7 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useAuth } from "@/context/AuthContext";
-import { brand, ui } from "@/lib/theme";
+import { useAppTheme } from "@/context/ThemeContext";
 
 const DRAWER_WIDTH = 280;
 const { height } = Dimensions.get("window");
@@ -56,6 +56,7 @@ const ADMIN_LINKS: NavLink[] = [
 ];
 
 export default function DrawerMenu({ visible, onClose }: DrawerMenuProps) {
+  const { themeName, setThemeName, theme } = useAppTheme();
   const router = useRouter();
   const { user, logout } = useAuth();
   const isAdmin = user?.role === "ADMIN" || user?.role === "SUPER_ADMIN";
@@ -109,9 +110,17 @@ export default function DrawerMenu({ visible, onClose }: DrawerMenuProps) {
       </Animated.View>
 
       {/* Drawer panel */}
-      <Animated.View style={[styles.drawer, { transform: [{ translateX }] }]}>
+      <Animated.View
+        style={[
+          styles.drawer,
+          {
+            transform: [{ translateX }],
+            backgroundColor: theme.ui.card,
+          },
+        ]}
+      >
         {/* Header */}
-        <View style={styles.drawerHeader}>
+        <View style={[styles.drawerHeader, { backgroundColor: theme.brand.base }]}>
           <Image
             source={require("../assets/icon.png")}
             style={styles.logoImage}
@@ -130,12 +139,44 @@ export default function DrawerMenu({ visible, onClose }: DrawerMenuProps) {
           {/* Main nav */}
           <Text style={styles.section}>Navigation</Text>
           {NAV_LINKS.map((link) => (
-            <TouchableOpacity key={link.href} style={styles.navItem} onPress={() => navigate(link.href)}>
+            <TouchableOpacity
+              key={link.href}
+              style={[styles.navItem, { borderBottomColor: theme.ui.border }]}
+              onPress={() => navigate(link.href)}
+            >
               <Text style={styles.navIcon}>{link.icon}</Text>
-              <Text style={styles.navLabel}>{link.label}</Text>
+              <Text style={[styles.navLabel, { color: theme.ui.text }]}>{link.label}</Text>
               <Text style={styles.navArrow}>›</Text>
             </TouchableOpacity>
           ))}
+
+          <Text style={[styles.section, { marginTop: 14 }]}>Theme</Text>
+          <View style={styles.themeSwitchRow}>
+            <TouchableOpacity
+              style={[
+                styles.themeChip,
+                {
+                  borderColor: themeName === "blue" ? "#1f5eb0" : "#d1dff3",
+                  backgroundColor: themeName === "blue" ? "#eaf3ff" : "#ffffff",
+                },
+              ]}
+              onPress={() => setThemeName("blue")}
+            >
+              <Text style={styles.themeChipLabel}>Blue</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.themeChip,
+                {
+                  borderColor: themeName === "rose" ? "#bf3550" : "#f4d6dc",
+                  backgroundColor: themeName === "rose" ? "#fff1f4" : "#ffffff",
+                },
+              ]}
+              onPress={() => setThemeName("rose")}
+            >
+              <Text style={styles.themeChipLabel}>Rose</Text>
+            </TouchableOpacity>
+          </View>
 
           {/* Admin section */}
           {isAdmin && (
@@ -144,7 +185,7 @@ export default function DrawerMenu({ visible, onClose }: DrawerMenuProps) {
               {ADMIN_LINKS.map((link) => (
                 <TouchableOpacity key={link.href} style={[styles.navItem, styles.adminItem]} onPress={() => navigate(link.href)}>
                   <Text style={styles.navIcon}>{link.icon}</Text>
-                  <Text style={[styles.navLabel, { color: "#7c3aed" }]}>{link.label}</Text>
+                      <Text style={[styles.navLabel, { color: theme.brand.base }]}>{link.label}</Text>
                   <Text style={styles.navArrow}>›</Text>
                 </TouchableOpacity>
               ))}
@@ -173,7 +214,6 @@ const styles = StyleSheet.create({
     left: 0,
     width: DRAWER_WIDTH,
     height: "100%",
-    backgroundColor: ui.card,
     shadowColor: "#0f172a",
     shadowOffset: { width: 6, height: 0 },
     shadowOpacity: 0.18,
@@ -183,7 +223,6 @@ const styles = StyleSheet.create({
   drawerHeader: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: brand.base,
     padding: 20,
     paddingTop: Platform.OS === "android" ? 44 : 56,
     gap: 12,
@@ -217,9 +256,26 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: "#eef2ff",
   },
-  adminItem: { backgroundColor: brand.tint },
+  adminItem: { backgroundColor: "#f3f8ff" },
   signOutItem: { marginTop: 8, backgroundColor: "#fff1f2", borderBottomWidth: 0 },
   navIcon: { fontSize: 18, width: 32 },
-  navLabel: { flex: 1, fontSize: 15, color: ui.text, fontWeight: "600" },
+  navLabel: { flex: 1, fontSize: 15, fontWeight: "600" },
   navArrow: { fontSize: 18, color: "#c0c9e8" },
+  themeSwitchRow: {
+    flexDirection: "row",
+    gap: 10,
+    paddingHorizontal: 20,
+    paddingBottom: 4,
+    paddingTop: 6,
+  },
+  themeChip: {
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingVertical: 7,
+    paddingHorizontal: 14,
+  },
+  themeChipLabel: {
+    fontWeight: "700",
+    color: "#15304f",
+  },
 });
