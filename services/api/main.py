@@ -10,7 +10,7 @@ from core.config import get_settings
 from core.database import create_indexes, close_connection, get_db
 from core.security import hash_password
 from core.scheduler import start_scheduler, stop_scheduler
-from routers import auth, users, products, cart, ratings_comments, menu, notifications, ranking, ads
+from routers import auth, users, products, cart, ratings_comments, menu, notifications, ranking, ads, receipts
 
 settings = get_settings()
 cors_origins = [origin.strip() for origin in settings.cors_origins.split(",") if origin.strip()]
@@ -164,6 +164,9 @@ app.include_router(menu.admin_router, prefix=PREFIX)
 # Notifications
 app.include_router(notifications.router, prefix=PREFIX)
 app.include_router(notifications.admin_router, prefix=PREFIX)
+
+# Receipts
+app.include_router(receipts.admin_router, prefix=PREFIX)
 
 # Advertisements
 app.include_router(ads.router, prefix=PREFIX)

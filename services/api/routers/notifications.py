@@ -238,6 +238,7 @@ class PushCompositionIn(BaseModel):
     deepLink: str | None = None
     targetUserId: str | None = None   # backwards-compatible single target
     targetUserIds: list[str] | None = None   # preferred multi-target
+    receiptData: dict | None = None   # optional receipt data to include with notification
 
 
 # ─── Admin routes ────────────────────────────────────────────────────────────
@@ -283,6 +284,7 @@ async def send_push(
                 "videoUrl": body.videoUrl,
                 "youtubeUrl": body.youtubeUrl,
                 "deepLink": body.deepLink,
+                "receiptData": body.receiptData,
                 "type": "GENERAL",
                 "read": False,
                 "createdAt": now,
@@ -316,6 +318,7 @@ async def send_push(
                     "videoUrl": body.videoUrl,
                     "youtubeUrl": body.youtubeUrl,
                     "deepLink": body.deepLink,
+                    "receiptData": body.receiptData,
                     "type": "GENERAL",
                     "read": False,
                     "createdAt": now,
