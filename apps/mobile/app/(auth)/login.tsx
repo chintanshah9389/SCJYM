@@ -25,14 +25,26 @@ export default function LoginScreen() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
+  function validateForm() {
+    const nextErrors: Record<string, string> = {};
+    if (!email.trim()) nextErrors.email = "Email is required.";
+    else if (!/^\S+@\S+\.\S+$/.test(email.trim())) nextErrors.email = "Enter a valid email address.";
+    if (!password) nextErrors.password = "Password is required.";
+    return nextErrors;
+  }
+
   async function handleLogin() {
-    if (!email || !password) {
-      showToast("Please enter email and password.", "warning");
+    const validationErrors = validateForm();
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      showToast("Please correct the highlighted required fields.", "warning");
       return;
     }
+
     setLoading(true);
     try {
       await login(email.trim(), password);
@@ -86,28 +98,51 @@ export default function LoginScreen() {
           <Text style={styles.cardSubtitle}>Sign in to continue</Text>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Email</Text>
+            <Text style={styles.label}>
+              Email <Text style={styles.required}>*</Text>
+            </Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, errors.email && styles.inputError]}
               placeholder="you@example.com"
               placeholderTextColor="#9ca3af"
               value={email}
-              onChangeText={setEmail}
+              onChangeText={(v) => {
+                setEmail(v);
+                if (errors.email) {
+                  setErrors((prev) => {
+                    const next = { ...prev };
+                    delete next.email;
+                    return next;
+                  });
+                }
+              }}
               keyboardType="email-address"
               autoCapitalize="none"
               autoComplete="email"
             />
+            {errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Password</Text>
+            <Text style={styles.label}>
+              Password <Text style={styles.required}>*</Text>
+            </Text>
             <View style={styles.passwordRow}>
               <TextInput
-                style={[styles.input, styles.passwordInput]}
+                style={[styles.input, styles.passwordInput, errors.password && styles.inputError]}
                 placeholder="••••••••"
                 placeholderTextColor="#9ca3af"
                 value={password}
-                onChangeText={setPassword}
+                onChangeText={(v) => {
+                  setPassword(v);
+                  if (errors.password) {
+                    setErrors((prev) => {
+                      const next = { ...prev };
+                      delete next.password;
+                      return next;
+                    });
+                  }
+                }}
                 secureTextEntry={!showPassword}
               />
               <TouchableOpacity
@@ -117,6 +152,7 @@ export default function LoginScreen() {
                 <Text style={styles.eyeText}>{showPassword ? "🙈" : "👁️"}</Text>
               </TouchableOpacity>
             </View>
+            {errors.password && <Text style={styles.errorText}>{errors.password}</Text>}
           </View>
 
           <TouchableOpacity
@@ -235,6 +271,7 @@ const styles = StyleSheet.create({
   /* ── Inputs ── */
   inputGroup: { marginBottom: 16 },
   label: { fontSize: 13, fontWeight: "700", color: ui.textMuted, marginBottom: 6 },
+  required: { color: "#dc2626", fontWeight: "800" },
   input: {
     borderWidth: 1.5,
     borderColor: ui.border,
@@ -243,6 +280,16 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: ui.text,
     backgroundColor: "#fffafa",
+  },
+  inputError: {
+    borderColor: "#dc2626",
+  },
+  errorText: {
+    color: "#dc2626",
+    fontSize: 12,
+    marginTop: 6,
+    marginLeft: 2,
+    fontWeight: "600",
   },
   passwordRow: { position: "relative" },
   passwordInput: { paddingRight: 48 },

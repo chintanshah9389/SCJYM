@@ -33,11 +33,8 @@ export default function ResetPasswordPage() {
       <TextInput style={styles.input} secureTextEntry value={password} onChangeText={setPassword} placeholder="New password" />
 
       <View style={{ flexDirection: "row", justifyContent: "flex-end", marginTop: 20 }}>
-        <TouchableOpacity onPress={() => router.back()} style={{ padding: 10, marginRight: 12 }}>
-          <Text>Cancel</Text>
-        </TouchableOpacity>
         <TouchableOpacity onPress={submit} style={{ padding: 10 }}>
-          <Text style={{ color: brand.base, fontWeight: "700" }}>{loading ? "Saving..." : "Save"}</Text>
+          <Text style={{ color: brand.base, fontWeight: "700" }}>{loading ? "Updating..." : "Update Password"}</Text>
         </TouchableOpacity>
       </View>
     </View>

@@ -18,7 +18,6 @@ import {
   View,
   Share,
 } from "react-native";
-import { Tabs } from "expo-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { brand, ui, shadows } from "@/lib/theme";
@@ -216,7 +215,6 @@ ${"═".repeat(40)}
 
   return (
     <View style={styles.root}>
-      <Tabs.Screen options={{ tabBarStyle: { display: "none" } }} />
       {/* Tabs */}
       <View style={styles.tabBar}>
         <TouchableOpacity

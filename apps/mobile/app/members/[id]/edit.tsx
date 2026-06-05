@@ -128,17 +128,14 @@ export default function EditMemberPage() {
           textContentType="none"
           importantForAutofill="no"
         />
-        <Text style={styles.hint}>Enter password for this member and save. Use Show to view what you type.</Text>
+        <Text style={styles.hint}>Enter password for this member. Use Show to view what you type.</Text>
         <TouchableOpacity onPress={() => setShowPassword((s) => !s)} style={{ alignSelf: "flex-end", marginBottom: 6 }}>
           <Text style={{ color: brand.base, fontWeight: "700" }}>{showPassword ? "Hide" : "Show"}</Text>
         </TouchableOpacity>
 
         <View style={{ flexDirection: "row", justifyContent: "flex-end", marginTop: 20 }}>
-          <TouchableOpacity onPress={() => router.back()} style={{ padding: 10, marginRight: 12 }}>
-            <Text>Cancel</Text>
-          </TouchableOpacity>
           <TouchableOpacity onPress={submit} style={{ padding: 10 }}>
-            <Text style={{ color: brand.base, fontWeight: "700" }}>{loading ? "Saving..." : "Save"}</Text>
+            <Text style={{ color: brand.base, fontWeight: "700" }}>{loading ? "Updating..." : "Update Member"}</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>

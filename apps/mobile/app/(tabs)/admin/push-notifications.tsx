@@ -35,7 +35,6 @@ export default function AdminPushNotificationsScreen() {
   const [deepLink, setDeepLink] = useState("");
   const [sending, setSending] = useState(false);
   const [statusMsg, setStatusMsg] = useState("");
-  const [targetMode, setTargetMode] = useState<"broadcast" | "selected">("broadcast");
   const [selectedUserIds, setSelectedUserIds] = useState<Set<string>>(new Set());
   const [userSearch, setUserSearch] = useState("");
 
@@ -83,8 +82,8 @@ export default function AdminPushNotificationsScreen() {
     setSending(true);
     setStatusMsg("Sending...");
     try {
-      const targetUserIds = targetMode === "selected" ? Array.from(selectedUserIds) : undefined;
-      console.log("📤 Sending push notification:", { title, body, deepLink, targetMode, targetUserIds });
+      const targetUserIds = Array.from(selectedUserIds);
+      console.log("📤 Sending push notification:", { title, body, deepLink, targetUserIds });
       const response = await api.post("/admin/notifications/push", {
         title: title.trim(),
         body: body.trim(),
@@ -94,14 +93,10 @@ export default function AdminPushNotificationsScreen() {
       console.log("✅ Push sent successfully:", response.data);
       const payload = response.data?.data || {};
       const msg = payload?.message || "Notification sent.";
-      const approvedUsers = payload?.approvedUsers ?? 0;
       const usersWithToken = payload?.usersWithToken ?? 0;
       const usersWithoutToken = payload?.usersWithoutToken ?? 0;
       const targetedUsers = payload?.targetedUsers ?? 0;
-      const details =
-        targetMode === "selected"
-          ? `Selected users: ${targetedUsers}\nWith token: ${usersWithToken}\nWithout token: ${usersWithoutToken}`
-          : `Approved users: ${approvedUsers}\nWith token: ${usersWithToken}\nWithout token: ${usersWithoutToken}`;
+      const details = `Selected users: ${targetedUsers}\nWith token: ${usersWithToken}\nWithout token: ${usersWithoutToken}`;
       setStatusMsg(`✅ ${msg}\n${details}`);
       Alert.alert("Success", `${msg}\n\n${details}`);
       setTitle("");
@@ -129,15 +124,12 @@ export default function AdminPushNotificationsScreen() {
       return;
     }
 
-    if (targetMode === "selected" && selectedUserIds.size === 0) {
+    if (selectedUserIds.size === 0) {
       Alert.alert("Validation", "Select at least one user.");
       return;
     }
 
-    const targetSummary =
-      targetMode === "selected"
-        ? `Send to ${selectedUserIds.size} selected user(s)?`
-        : "Broadcast to all users?";
+    const targetSummary = `Send to ${selectedUserIds.size} selected user(s)?`;
 
     if (Platform.OS === "web") {
       const confirmed = window.confirm(`${targetSummary}\n\n"${title}"\n${body}`);
@@ -270,74 +262,45 @@ export default function AdminPushNotificationsScreen() {
             autoCapitalize="none"
           />
 
-          <Text style={styles.label}>Target Audience</Text>
-          <View style={styles.targetModeRow}>
-            <Pressable
-              style={[styles.targetModeBtn, targetMode === "broadcast" && styles.targetModeBtnActive]}
-              onPress={() => setTargetMode("broadcast")}
-            >
-              <Text style={[styles.targetModeText, targetMode === "broadcast" && styles.targetModeTextActive]}>
-                Broadcast
-              </Text>
-            </Pressable>
-            <Pressable
-              style={[styles.targetModeBtn, targetMode === "selected" && styles.targetModeBtnActive]}
-              onPress={() => setTargetMode("selected")}
-            >
-              <Text style={[styles.targetModeText, targetMode === "selected" && styles.targetModeTextActive]}>
-                Selected Users
-              </Text>
-            </Pressable>
+          <Text style={styles.label}>Target Users</Text>
+          <View style={styles.userSelectWrap}>
+            <TextInput
+              style={styles.input}
+              value={userSearch}
+              onChangeText={setUserSearch}
+              placeholder="Search user by name/email"
+              placeholderTextColor="#9ca3af"
+            />
+            <Text style={styles.selectedCount}>Selected: {selectedUserIds.size}</Text>
+
+            {usersLoading ? (
+              <ActivityIndicator size="small" color={brand.base} style={{ marginTop: 8 }} />
+            ) : (
+              <View style={styles.userListBox}>
+                {filteredUsers.slice(0, 50).map((u) => {
+                  const selected = selectedUserIds.has(u.id);
+                  return (
+                    <Pressable key={u.id} style={styles.userRow} onPress={() => toggleUserSelection(u.id)}>
+                      <View style={[styles.checkbox, selected && styles.checkboxChecked]} />
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.userName}>{u.fullName || "Unnamed"}</Text>
+                        <Text style={styles.userEmail}>{u.email || "-"}</Text>
+                      </View>
+                    </Pressable>
+                  );
+                })}
+                {filteredUsers.length === 0 && <Text style={styles.emptyUsers}>No users found.</Text>}
+              </View>
+            )}
           </View>
 
-          {targetMode === "selected" && (
-            <View style={styles.userSelectWrap}>
-              <TextInput
-                style={styles.input}
-                value={userSearch}
-                onChangeText={setUserSearch}
-                placeholder="Search user by name/email"
-                placeholderTextColor="#9ca3af"
-              />
-              <Text style={styles.selectedCount}>Selected: {selectedUserIds.size}</Text>
-
-              {usersLoading ? (
-                <ActivityIndicator size="small" color={brand.base} style={{ marginTop: 8 }} />
-              ) : (
-                <View style={styles.userListBox}>
-                  {filteredUsers.slice(0, 50).map((u) => {
-                    const selected = selectedUserIds.has(u.id);
-                    return (
-                      <Pressable key={u.id} style={styles.userRow} onPress={() => toggleUserSelection(u.id)}>
-                        <View style={[styles.checkbox, selected && styles.checkboxChecked]} />
-                        <View style={{ flex: 1 }}>
-                          <Text style={styles.userName}>{u.fullName || "Unnamed"}</Text>
-                          <Text style={styles.userEmail}>{u.email || "-"}</Text>
-                        </View>
-                      </Pressable>
-                    );
-                  })}
-                  {filteredUsers.length === 0 && <Text style={styles.emptyUsers}>No users found.</Text>}
-                </View>
-              )}
-            </View>
-          )}
-
-          <Text style={styles.hint}>
-            {targetMode === "selected"
-              ? "📡 This will be sent only to selected users."
-              : "📡 This will be sent to ALL registered users with notifications enabled."}
-          </Text>
+          <Text style={styles.hint}>📡 This will be sent only to selected users.</Text>
 
           <Pressable style={[styles.sendBtn, sending && styles.disabled]} onPress={handleSend} disabled={sending}>
             {sending ? (
               <ActivityIndicator color="#fff" />
             ) : (
-              <Text style={styles.sendBtnText}>
-                {targetMode === "selected"
-                  ? `🔔 Send to Selected (${selectedUserIds.size})`
-                  : "🔔 Broadcast to All Users"}
-              </Text>
+              <Text style={styles.sendBtnText}>{`🔔 Send to Selected (${selectedUserIds.size})`}</Text>
             )}
           </Pressable>
         </ScrollView>
@@ -398,22 +361,6 @@ const styles = StyleSheet.create({
   label: { fontSize: 14, fontWeight: "600", color: "#334155", marginBottom: 6, marginTop: 14 },
   input: { backgroundColor: ui.card, borderWidth: 1, borderColor: ui.border, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, fontSize: 15, color: ui.text },
   textarea: { height: 110 },
-  targetModeRow: { flexDirection: "row", gap: 10, marginTop: 8 },
-  targetModeBtn: {
-    flex: 1,
-    borderWidth: 1,
-    borderColor: ui.border,
-    borderRadius: 10,
-    paddingVertical: 10,
-    alignItems: "center",
-    backgroundColor: ui.card,
-  },
-  targetModeBtnActive: {
-    borderColor: brand.base,
-    backgroundColor: "#eff6ff",
-  },
-  targetModeText: { color: ui.textMuted, fontSize: 13, fontWeight: "600" },
-  targetModeTextActive: { color: brand.base },
   userSelectWrap: { marginTop: 10 },
   selectedCount: { marginTop: 8, fontSize: 12, color: "#334155", fontWeight: "700" },
   userListBox: {

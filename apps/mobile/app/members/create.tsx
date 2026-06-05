@@ -80,9 +80,6 @@ export default function CreateMemberPage() {
         <TextInput style={styles.input} secureTextEntry value={form.password} onChangeText={(v) => setForm((s:any) => ({ ...s, password: v }))} placeholder="Leave blank to auto-generate" />
 
         <View style={{ flexDirection: "row", justifyContent: "flex-end", marginTop: 20 }}>
-          <TouchableOpacity onPress={() => router.back()} style={{ padding: 10, marginRight: 12 }}>
-            <Text>Cancel</Text>
-          </TouchableOpacity>
           <TouchableOpacity onPress={submit} style={{ padding: 10 }}>
             <Text style={{ color: brand.base, fontWeight: "700" }}>{loading ? "Creating..." : "Create"}</Text>
           </TouchableOpacity>

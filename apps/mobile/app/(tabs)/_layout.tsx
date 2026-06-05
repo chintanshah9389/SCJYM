@@ -53,6 +53,7 @@ export default function TabsLayout() {
           tabBarActiveTintColor: theme.brand.base,
           tabBarInactiveTintColor: theme.ui.textMuted,
           tabBarStyle: [styles.tabBar, { borderColor: theme.ui.border }],
+          sceneStyle: styles.scene,
           tabBarLabelStyle: styles.tabLabel,
           tabBarBackground: gradientTabBar,
           headerShown: true,
@@ -179,6 +180,10 @@ export default function TabsLayout() {
 }
 
 const styles = StyleSheet.create({
+  scene: {
+    // Keep bottom actions above the floating tab bar across screens.
+    paddingBottom: 96,
+  },
   header: {
     backgroundColor: "transparent",
     borderBottomLeftRadius: 20,
