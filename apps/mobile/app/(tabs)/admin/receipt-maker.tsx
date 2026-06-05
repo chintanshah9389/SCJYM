@@ -18,6 +18,7 @@ import {
   View,
   Share,
 } from "react-native";
+import * as Print from "expo-print";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { brand, ui, shadows } from "@/lib/theme";
@@ -166,6 +167,76 @@ ${"═".repeat(40)}
     }
   }
 
+  function escapeHtml(value: string): string {
+    return value
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/\"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
+  async function shareReceiptPdf() {
+    if (!bodyText.trim()) {
+      Alert.alert("Validation", "Please add message to receipt body");
+      return;
+    }
+
+    try {
+      const sharedText = receiptContent;
+      const html = `
+        <html>
+          <head>
+            <meta charset="utf-8" />
+            <style>
+              body { font-family: Arial, sans-serif; padding: 20px; color: #0f172a; }
+              .card { border: 1px solid #dbeafe; border-radius: 12px; padding: 16px; }
+              .title { color: #1d4ed8; font-size: 20px; font-weight: bold; margin-bottom: 8px; }
+              .sub { color: #64748b; font-size: 12px; margin-bottom: 12px; }
+              pre { white-space: pre-wrap; line-height: 1.5; font-size: 12px; font-family: Courier New, monospace; }
+            </style>
+          </head>
+          <body>
+            <div class="card">
+              <div class="title">SCJYM Receipt</div>
+              <div class="sub">Generated for sharing via WhatsApp</div>
+              <pre>${escapeHtml(sharedText)}</pre>
+            </div>
+          </body>
+        </html>
+      `;
+
+      const { uri } = await Print.printToFileAsync({ html });
+
+      await Share.share({
+        title: `Receipt ${receiptNum}`,
+        message: `Receipt ${receiptNum}`,
+        url: uri,
+      } as any);
+
+      if (selectedUserIds.size > 0) {
+        const targetUserIds = Array.from(selectedUserIds);
+        await api.post("/admin/notifications/push", {
+          title: `Receipt ${receiptNum}`,
+          body: sharedText,
+          targetUserIds,
+          receiptData: {
+            receiptNum,
+            header,
+            body: bodyText,
+            formattedText: sharedText,
+            generatedAt: new Date().toISOString(),
+            recipients: targetUserIds,
+          },
+        });
+        setStatusMsg(`Success: Shared and added to notifications for ${targetUserIds.length} recipient(s).`);
+      }
+    } catch {
+      Alert.alert("Error", "Could not create/share PDF. Falling back to text share.");
+      await shareViaWhatsApp();
+    }
+  }
+
   async function handleSendReceipt() {
     if (!bodyText.trim()) {
       setStatusMsg("Validation: Please add message to receipt body.");
@@ -197,12 +268,18 @@ ${"═".repeat(40)}
       const generatedPushTitle = selectedNamesForTitle
         ? `Receipt for ${selectedNamesForTitle}${selectedSuffix}`
         : "New Receipt";
-      const generatedPushBody = buildReceiptMessage(bodyText, primarySelectedName);
+      const generatedPushBody = generateReceiptText(
+        receiptNum,
+        header,
+        bodyText,
+        primarySelectedName
+      );
 
       const receipt = {
         receiptNum,
         header,
         body: bodyText,
+        formattedText: generatedPushBody,
         formattedBody: buildReceiptMessage(bodyText, primarySelectedName),
         greetingMode: useSelectedUserName ? "selected-user" : "generic",
         generatedAt: new Date().toISOString(),
@@ -436,11 +513,11 @@ ${"═".repeat(40)}
               <TouchableOpacity
                 style={[styles.btn, styles.btnSecondary]}
                 onPress={() => {
-                  void shareViaWhatsApp();
+                  void shareReceiptPdf();
                 }}
                 disabled={sendReceiptMut.isPending}
               >
-                <Text style={styles.btnSecondaryText}>📱 Share Text</Text>
+                <Text style={styles.btnSecondaryText}>📄 Share PDF</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.btn, styles.btnPrimary, sendReceiptMut.isPending && { opacity: 0.7 }]}
@@ -479,10 +556,12 @@ ${"═".repeat(40)}
           </View>
           <TouchableOpacity
             style={[styles.btn, styles.btnPrimary, { marginTop: 16 }]}
-            onPress={() => shareViaWhatsApp()}
+            onPress={() => {
+              void shareReceiptPdf();
+            }}
             disabled={sendReceiptMut.isPending}
           >
-            <Text style={styles.btnText}>📱 Share via WhatsApp</Text>
+            <Text style={styles.btnText}>📄 Share via WhatsApp (PDF)</Text>
           </TouchableOpacity>
         </ScrollView>
       )}

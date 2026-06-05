@@ -6,6 +6,7 @@
 import { useEffect } from "react";
 import { Platform } from "react-native";
 import Constants from "expo-constants";
+import { useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 
 function getExpoProjectId(): string | null {
@@ -48,6 +49,8 @@ if (Platform.OS !== "web") {
 }
 
 export function usePushNotifications(userId?: string) {
+  const queryClient = useQueryClient();
+
   useEffect(() => {
     if (!userId || Platform.OS === "web") return;
 
@@ -101,12 +104,15 @@ export function usePushNotifications(userId?: string) {
     })();
 
     // Set up listeners for incoming notifications
-    const cleanup = setupNotificationListeners();
+    const cleanup = setupNotificationListeners(() => {
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+      queryClient.invalidateQueries({ queryKey: ["notif-carousel"] });
+    });
     return cleanup;
-  }, [userId]);
+  }, [userId, queryClient]);
 }
 
-function setupNotificationListeners() {
+function setupNotificationListeners(onNotificationUpdate: () => void) {
   if (Platform.OS === "web") return;
 
   const Notifications = require("expo-notifications");
@@ -114,6 +120,7 @@ function setupNotificationListeners() {
   // Listen for notifications received while app is foreground
   const foregroundSubscription = Notifications.addNotificationReceivedListener((notification:any) => {
     console.log("📬 Notification received (foreground):", notification.request.content.title);
+    onNotificationUpdate();
   });
 
   // Listen for notifications tapped while app is closed or backgrounded
@@ -121,6 +128,7 @@ function setupNotificationListeners() {
     const { title, body } = response.notification.request.content;
     const deepLink = response.notification.request.content.data?.deepLink;
     console.log("👆 Notification tapped:", title);
+    onNotificationUpdate();
     
     // Handle deep linking if provided
     if (deepLink) {

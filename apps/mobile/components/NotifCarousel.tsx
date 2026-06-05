@@ -78,6 +78,8 @@ export default function NotifCarousel() {
       api.get("/notifications?limit=10").then((r) => r.data.data?.items ?? r.data.data ?? []),
     enabled: !!user,
     staleTime: 30_000,
+    refetchInterval: user ? 15_000 : false,
+    refetchOnReconnect: true,
   });
 
   useEffect(() => {
@@ -124,6 +126,16 @@ export default function NotifCarousel() {
     next.add(id);
     setDismissedIds(next);
     await storeDismissedIds(user.id, Array.from(next));
+
+    // Persist dismissal server-side so it does not reappear after refresh/login.
+    await api
+      .patch(`/notifications/${id}/read`, undefined, {
+        headers: { "x-no-toast": "1" },
+      })
+      .catch(() => {});
+
+    queryClient.invalidateQueries({ queryKey: ["notif-carousel"] });
+    queryClient.invalidateQueries({ queryKey: ["notifications"] });
   }
 
   async function markAllRead() {

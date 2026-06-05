@@ -18,6 +18,13 @@ type NotificationItem = {
   body: string;
   createdAt: string;
   read: boolean;
+  receiptData?: {
+    receiptNum?: string;
+    header?: string;
+    body?: string;
+    formattedText?: string;
+    generatedAt?: string;
+  };
 };
 
 type NotificationsResponse = {
@@ -41,6 +48,8 @@ export default function NotificationsScreen() {
     queryKey: ["notifications", user?.id],
     queryFn: () => api.get("/notifications").then((r) => r.data.data),
     enabled: !!user,
+    refetchInterval: user ? 15_000 : false,
+    refetchOnReconnect: true,
   });
 
   const markRead = useMutation({
@@ -123,6 +132,25 @@ export default function NotificationsScreen() {
 
   if (isLoading) return <ActivityIndicator size="large" color={brand.base} style={{ marginTop: 60 }} />;
 
+  function renderReceiptBlock(item: NotificationItem) {
+    const receipt = item.receiptData;
+    if (!receipt) return null;
+
+    const previewText = (receipt.formattedText ?? item.body ?? "").trim();
+    const compactPreview = previewText.length > 420 ? `${previewText.slice(0, 420)}...` : previewText;
+
+    return (
+      <View style={styles.receiptCard}>
+        <View style={styles.receiptHeaderRow}>
+          <Text style={styles.receiptBadge}>Receipt</Text>
+          <Text style={styles.receiptNumber}>{receipt.receiptNum ?? "-"}</Text>
+        </View>
+        {receipt.header ? <Text style={styles.receiptHeading}>{receipt.header}</Text> : null}
+        <Text style={styles.receiptPreview}>{compactPreview}</Text>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
       {notifications.length === 0 ? (
@@ -139,7 +167,11 @@ export default function NotificationsScreen() {
               onPress={() => !item.read && markAsReadWithUndo(item.id)}
             >
               <Text style={styles.title}>{item.title}</Text>
-              <Text style={styles.body}>{item.body}</Text>
+              {item.receiptData ? (
+                renderReceiptBlock(item)
+              ) : (
+                <Text style={styles.body}>{item.body}</Text>
+              )}
               <Text style={styles.time}>{new Date(item.createdAt).toLocaleString()}</Text>
             </TouchableOpacity>
           )}
@@ -174,6 +206,38 @@ const styles = StyleSheet.create({
   unread: { borderLeftWidth: 4, borderLeftColor: brand.base, backgroundColor: brand.tint },
   title: { fontSize: 15, fontWeight: "700", color: ui.text },
   body: { fontSize: 13, color: ui.textMuted, marginTop: 4, lineHeight: 18 },
+  receiptCard: {
+    marginTop: 8,
+    backgroundColor: "#f8fafc",
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "#dbeafe",
+    padding: 10,
+  },
+  receiptHeaderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 6,
+  },
+  receiptBadge: {
+    fontSize: 11,
+    fontWeight: "800",
+    color: "#1d4ed8",
+    backgroundColor: "#dbeafe",
+    borderRadius: 999,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    overflow: "hidden",
+  },
+  receiptNumber: { fontSize: 12, fontWeight: "700", color: "#1e3a8a" },
+  receiptHeading: { fontSize: 13, fontWeight: "700", color: "#0f172a", marginBottom: 6 },
+  receiptPreview: {
+    fontSize: 12,
+    color: "#334155",
+    lineHeight: 17,
+    fontFamily: Platform.OS === "ios" ? "Courier New" : "monospace",
+  },
   time: { fontSize: 11, color: "#8794b5", marginTop: 6, fontWeight: "600" },
   undoBar: {
     position: "absolute",
