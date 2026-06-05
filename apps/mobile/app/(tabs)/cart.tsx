@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { View, Text, FlatList, StyleSheet, TouchableOpacity, Alert, ActivityIndicator } from "react-native";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../lib/api";
@@ -6,8 +6,9 @@ import { brand, ui, shadows } from "../../lib/theme";
 
 export default function CartScreen() {
   const qc = useQueryClient();
+  const [refreshing, setRefreshing] = useState(false);
 
-  const { data: cart, isLoading } = useQuery({
+  const { data: cart, isLoading, refetch } = useQuery({
     queryKey: ["cart"],
     queryFn: () => api.get("/cart").then((r) => r.data.data),
   });
@@ -19,6 +20,15 @@ export default function CartScreen() {
 
   const items = cart?.items ?? [];
   const total = items.reduce((sum: number, i: any) => sum + i.price * i.quantity, 0);
+
+  async function handleRefresh() {
+    setRefreshing(true);
+    try {
+      await refetch();
+    } finally {
+      setRefreshing(false);
+    }
+  }
 
   if (isLoading) return <ActivityIndicator size="large" color={brand.base} style={{ marginTop: 60 }} />;
 
@@ -32,6 +42,8 @@ export default function CartScreen() {
           <FlatList
             data={items}
             keyExtractor={(item) => item.productId}
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
             renderItem={({ item }) => (
               <View style={styles.item}>
                 <View style={styles.itemInfo}>

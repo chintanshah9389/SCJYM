@@ -46,7 +46,7 @@ export default function ProductDetailScreen() {
   const router = useRouter();
   const qc = useQueryClient();
   const { id } = useLocalSearchParams();
-  const [quantity, setQuantity] = useState(1);
+  const [quantity, setQuantity] = useState("1");
   const [activeImageIdx, setActiveImageIdx] = useState(0);
   const carouselRef = useRef<FlatList>(null);
 
@@ -61,11 +61,11 @@ export default function ProductDetailScreen() {
     mutationFn: () =>
       api.post("/cart/items", {
         productId: id,
-        quantity: parseInt(quantity) || 1,
+        quantity: Number.parseInt(quantity, 10) || 1,
       }),
     onSuccess: () => {
       Alert.alert("Success", "Added to cart");
-      setQuantity(1);
+      setQuantity("1");
     },
     onError: (e: any) => {
       Alert.alert("Error", e?.response?.data?.error?.message ?? "Could not add to cart");
@@ -219,7 +219,7 @@ export default function ProductDetailScreen() {
             <View style={styles.quantityInput}>
               <TouchableOpacity
                 style={styles.qtyBtn}
-                onPress={() => setQuantity(Math.max(1, parseInt(quantity) - 1).toString())}
+                onPress={() => setQuantity(Math.max(1, Number.parseInt(quantity, 10) - 1).toString())}
               >
                 <Text style={styles.qtyBtnText}>−</Text>
               </TouchableOpacity>
@@ -231,7 +231,7 @@ export default function ProductDetailScreen() {
               />
               <TouchableOpacity
                 style={styles.qtyBtn}
-                onPress={() => setQuantity((parseInt(quantity) + 1).toString())}
+                onPress={() => setQuantity((Number.parseInt(quantity, 10) + 1).toString())}
               >
                 <Text style={styles.qtyBtnText}>+</Text>
               </TouchableOpacity>

@@ -21,6 +21,7 @@ import { brand, ui, shadows } from "@/lib/theme";
 const ADMIN_LINKS = [
   { label: "👤 User Approvals", href: "/admin/user-approvals", color: "#1a56db" },
   { label: "📦 Product Approvals", href: "/admin/product-approvals", color: "#059669" },
+  { label: "📝 Posts", href: "/admin/posts", color: "#be123c" },
   { label: "📣 Advertisements", href: "/admin/advertisements", color: "#f59e0b" },
   { label: "💬 Moderation", href: "/admin/moderation", color: "#7c3aed" },
   { label: "🔔 Push Notifications", href: "/admin/push-notifications", color: "#d97706" },

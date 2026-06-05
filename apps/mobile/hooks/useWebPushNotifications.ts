@@ -48,7 +48,7 @@ export function useWebPushNotifications(userId?: string) {
         console.log('🔔 Subscribing to push notifications...');
         const subscription = await registration.pushManager.subscribe({
           userVisibleOnly: true,
-          applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+          applicationServerKey: urlBase64ToArrayBuffer(VAPID_PUBLIC_KEY),
         });
 
         // Send subscription to backend
@@ -64,9 +64,9 @@ export function useWebPushNotifications(userId?: string) {
 }
 
 /**
- * Convert VAPID public key from base64 to Uint8Array
+ * Convert VAPID public key from base64 to ArrayBuffer
  */
-function urlBase64ToUint8Array(base64String: string): Uint8Array {
+function urlBase64ToArrayBuffer(base64String: string): ArrayBuffer {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
   const base64 = (base64String + padding).replace(/\-/g, '+').replace(/_/g, '/');
   const rawData = window.atob(base64);
@@ -74,5 +74,5 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
   for (let i = 0; i < rawData.length; ++i) {
     outputArray[i] = rawData.charCodeAt(i);
   }
-  return outputArray;
+  return outputArray.buffer.slice(0);
 }

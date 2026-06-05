@@ -10,6 +10,7 @@ import {
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../lib/api";
 import { brand, ui, shadows } from "../../lib/theme";
+import { useAuth } from "../../context/AuthContext";
 
 type NotificationItem = {
   id: string;
@@ -29,14 +30,17 @@ type PendingRead = {
 };
 
 export default function NotificationsScreen() {
+  const { user } = useAuth();
   const qc = useQueryClient();
   const pendingReadRef = useRef<PendingRead | null>(null);
   const [optimisticallyHiddenIds, setOptimisticallyHiddenIds] = useState<Set<string>>(new Set());
   const [pendingReadId, setPendingReadId] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
 
-  const { data, isLoading } = useQuery<NotificationsResponse>({
-    queryKey: ["notifications"],
+  const { data, isLoading, refetch } = useQuery<NotificationsResponse>({
+    queryKey: ["notifications", user?.id],
     queryFn: () => api.get("/notifications").then((r) => r.data.data),
+    enabled: !!user,
   });
 
   const markRead = useMutation({
@@ -66,6 +70,15 @@ export default function NotificationsScreen() {
     const source = data?.items ?? [];
     return source.filter((item) => !optimisticallyHiddenIds.has(item.id));
   }, [data?.items, optimisticallyHiddenIds]);
+
+  async function handleRefresh() {
+    setRefreshing(true);
+    try {
+      await refetch();
+    } finally {
+      setRefreshing(false);
+    }
+  }
 
   function finalizePendingRead(id: string) {
     markRead.mutate(id);
@@ -118,6 +131,8 @@ export default function NotificationsScreen() {
         <FlatList
           data={notifications}
           keyExtractor={(item) => item.id}
+          refreshing={refreshing}
+          onRefresh={handleRefresh}
           renderItem={({ item }) => (
             <TouchableOpacity
               style={[styles.item, !item.read && styles.unread]}

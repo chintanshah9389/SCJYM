@@ -59,6 +59,10 @@ export default function AdCarousel() {
   }, [ads.length]);
 
   function handleTap(ad: any) {
+    if (ad.linkType === "POST_PAGE") {
+      router.push({ pathname: "/posts/[id]", params: { id: ad.id } });
+      return;
+    }
     if (!ad.linkTarget) return;
     if (ad.linkType === "SCREEN_ROUTE") {
       router.push(ad.linkTarget as any);
@@ -101,7 +105,7 @@ export default function AdCarousel() {
         {ads.map((ad: any) => (
           <TouchableOpacity
             key={ad.id}
-            activeOpacity={ad.linkTarget ? 0.88 : 1}
+            activeOpacity={ad.linkTarget || ad.linkType === "POST_PAGE" ? 0.88 : 1}
             style={styles.slide}
             onPress={() => handleTap(ad)}
           >
@@ -134,6 +138,9 @@ export default function AdCarousel() {
               <Text style={styles.adTitle} numberOfLines={1}>{ad.title}</Text>
               {!!ad.subtitle && (
                 <Text style={styles.adSubtitle} numberOfLines={1}>{ad.subtitle}</Text>
+              )}
+              {ad.linkType === "POST_PAGE" && (
+                <Text style={styles.ctaText}>{ad.ctaLabel?.trim() || "Read more"}</Text>
               )}
             </View>
           </TouchableOpacity>
@@ -194,6 +201,7 @@ const styles = StyleSheet.create({
   },
   adTitle: { color: "#fff", fontSize: 17, fontWeight: "700", textShadowColor: "rgba(0,0,0,0.5)", textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 4 },
   adSubtitle: { color: "rgba(255,255,255,0.85)", fontSize: 13, marginTop: 2, textShadowColor: "rgba(0,0,0,0.4)", textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 3 },
+  ctaText: { color: "#fff", fontSize: 12, fontWeight: "800", marginTop: 8, letterSpacing: 0.5, textTransform: "uppercase" },
   dots: {
     flexDirection: "row",
     justifyContent: "center",

@@ -50,7 +50,7 @@ export default function ReceiptMakerScreen() {
   const [notificationTitle, setNotificationTitle] = useState("New Receipt");
   const [notificationBody, setNotificationBody] = useState("Receipt generated for you");
   const [useSelectedUserName, setUseSelectedUserName] = useState(true);
-  const [sending, setSending] = useState(false);
+  const [statusMsg, setStatusMsg] = useState("");
 
   const { data: users = [], isLoading: usersLoading } = useQuery<AdminUser[]>({
     queryKey: ["admin-receipt-users"],
@@ -84,6 +84,10 @@ export default function ReceiptMakerScreen() {
   );
 
   const previewUserName = useSelectedUserName ? selectedUserNames[0] : undefined;
+  const stickyActionStyle =
+    Platform.OS === "web"
+      ? ({ position: "sticky", bottom: 84, zIndex: 20 } as any)
+      : null;
 
   function buildReceiptMessage(message: string, userName?: string): string {
     const greeting = useSelectedUserName && userName ? `Hi ${userName},` : "Hi Member,";
@@ -135,30 +139,49 @@ ${"═".repeat(40)}
 
     if (userPhone) {
       const cleanPhone = userPhone.replace(/\D/g, "");
-      const whatsappUrl =
-        Platform.OS === "ios"
-          ? `whatsapp://send?phone=91${cleanPhone}&text=${encodedMsg}`
-          : `https://wa.me/91${cleanPhone}?text=${encodedMsg}`;
+      const deepLinkUrl = `whatsapp://send?phone=91${cleanPhone}&text=${encodedMsg}`;
+      const webFallbackUrl = `https://wa.me/91${cleanPhone}?text=${encodedMsg}`;
 
       try {
-        const supported = await Linking.canOpenURL(whatsappUrl);
+        const supported = await Linking.canOpenURL(deepLinkUrl);
         if (supported) {
-          await Linking.openURL(whatsappUrl);
+          await Linking.openURL(deepLinkUrl);
         } else {
-          Alert.alert("Error", "WhatsApp not installed on this device");
+          await Linking.openURL(webFallbackUrl);
         }
       } catch (e) {
         Alert.alert("Error", "Could not open WhatsApp");
       }
     } else {
       try {
-        await Share.share({
-          message: receiptContent,
-          title: `Receipt ${receiptNum}`,
-        });
+        if (Platform.OS === "web" && typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+          await navigator.clipboard.writeText(receiptContent);
+          Alert.alert("Copied", "Receipt text copied. Paste it in WhatsApp.");
+          return;
+        }
+        await Share.share({ message: receiptContent, title: `Receipt ${receiptNum}` });
       } catch (e) {
         Alert.alert("Error", "Could not share receipt");
       }
+    }
+  }
+
+  async function handleSendReceipt() {
+    if (!bodyText.trim()) {
+      setStatusMsg("Validation: Please add message to receipt body.");
+      Alert.alert("Validation", "Please add message to receipt body");
+      return;
+    }
+    if (selectedUserIds.size === 0) {
+      setStatusMsg("Validation: Please select at least one recipient.");
+      Alert.alert("Validation", "Please select at least one recipient");
+      return;
+    }
+    setStatusMsg("Sending receipt...");
+    try {
+      await sendReceiptMut.mutateAsync();
+    } catch {
+      // Error UI handled in mutation onError callback.
     }
   }
 
@@ -200,6 +223,7 @@ ${"═".repeat(40)}
       return api.post("/admin/receipts", receipt);
     },
     onSuccess: (response) => {
+      setStatusMsg(`Success: Receipt sent to ${selectedUserIds.size} recipient(s).`);
       Alert.alert("Success", `Receipt sent to ${selectedUserIds.size} recipient(s)`);
       setBodyText("");
       setSelectedUserIds(new Set());
@@ -209,7 +233,15 @@ ${"═".repeat(40)}
       qc.invalidateQueries({ queryKey: ["admin-receipt-users"] });
     },
     onError: (e: any) => {
-      Alert.alert("Error", e?.response?.data?.error?.message || e.message);
+      const msg =
+        e?.response?.data?.error?.message ??
+        e?.response?.data?.detail?.error?.message ??
+        e?.response?.data?.detail?.message ??
+        e?.response?.data?.detail ??
+        e?.message ??
+        "Failed to send receipt.";
+      setStatusMsg(`Error: ${msg}`);
+      Alert.alert("Error", msg);
     },
   });
 
@@ -237,7 +269,12 @@ ${"═".repeat(40)}
 
       {/* Compose Tab */}
       {tab === "compose" && (
-        <ScrollView contentContainerStyle={styles.body}>
+        <ScrollView contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
+          {statusMsg ? (
+            <View style={styles.statusBox}>
+              <Text style={styles.statusText}>{statusMsg}</Text>
+            </View>
+          ) : null}
           {/* Receipt Metadata */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Receipt Info</Text>
@@ -394,27 +431,31 @@ ${"═".repeat(40)}
             )}
           </View>
 
-          {/* Action Buttons */}
-          <View style={styles.actionRow}>
-            <TouchableOpacity
-              style={[styles.btn, styles.btnSecondary]}
-              onPress={() => shareViaWhatsApp()}
-            >
-              <Text style={styles.btnSecondaryText}>📱 Share Text</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.btn, styles.btnPrimary, sending && { opacity: 0.7 }]}
-              onPress={() => sendReceiptMut.mutate()}
-              disabled={sending}
-            >
-              {sending ? (
-                <ActivityIndicator color="#fff" size="small" />
-              ) : (
-                <Text style={styles.btnText}>
-                  {sendNotification ? "📤 Send + Notify" : "📤 Send Receipts"}
-                </Text>
-              )}
-            </TouchableOpacity>
+          <View style={[styles.actionCard, stickyActionStyle]}>
+            <View style={styles.actionRow}>
+              <TouchableOpacity
+                style={[styles.btn, styles.btnSecondary]}
+                onPress={() => {
+                  void shareViaWhatsApp();
+                }}
+                disabled={sendReceiptMut.isPending}
+              >
+                <Text style={styles.btnSecondaryText}>📱 Share Text</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.btn, styles.btnPrimary, sendReceiptMut.isPending && { opacity: 0.7 }]}
+                onPress={() => { void handleSendReceipt(); }}
+                disabled={sendReceiptMut.isPending}
+              >
+                {sendReceiptMut.isPending ? (
+                  <ActivityIndicator color="#fff" size="small" />
+                ) : (
+                  <Text style={styles.btnText}>
+                    {sendNotification ? "📤 Send + Notify" : "📤 Send Receipts"}
+                  </Text>
+                )}
+              </TouchableOpacity>
+            </View>
           </View>
         </ScrollView>
       )}
@@ -439,6 +480,7 @@ ${"═".repeat(40)}
           <TouchableOpacity
             style={[styles.btn, styles.btnPrimary, { marginTop: 16 }]}
             onPress={() => shareViaWhatsApp()}
+            disabled={sendReceiptMut.isPending}
           >
             <Text style={styles.btnText}>📱 Share via WhatsApp</Text>
           </TouchableOpacity>
@@ -460,7 +502,16 @@ const styles = StyleSheet.create({
   tabActive: { borderBottomColor: brand.base },
   tabText: { fontSize: 14, fontWeight: "600", color: ui.textMuted },
   tabTextActive: { color: brand.base },
-  body: { padding: 16, paddingBottom: 40 },
+  body: { padding: 16, paddingBottom: 110 },
+  statusBox: {
+    backgroundColor: "#eef2ff",
+    borderWidth: 1,
+    borderColor: "#c7d2fe",
+    borderRadius: 10,
+    padding: 10,
+    marginBottom: 14,
+  },
+  statusText: { color: "#1f2937", fontSize: 13, fontWeight: "600" },
   section: { marginBottom: 20 },
   sectionTitle: { fontSize: 14, fontWeight: "700", color: ui.text, marginBottom: 8 },
   input: {
@@ -524,13 +575,26 @@ const styles = StyleSheet.create({
   toggleActive: { backgroundColor: brand.base },
   toggleBall: { width: 24, height: 24, borderRadius: 12, backgroundColor: "#fff", alignSelf: "flex-start" },
   toggleBallActive: { alignSelf: "flex-end" },
+  actionCard: {
+    marginTop: 8,
+    backgroundColor: "rgba(255,255,255,0.96)",
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: ui.border,
+    padding: 10,
+    shadowColor: "#0f172a",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 2,
+  },
   actionRow: { flexDirection: "row", gap: 12 },
   btn: { flex: 1, borderRadius: 10, paddingVertical: 12, alignItems: "center" },
   btnPrimary: { backgroundColor: brand.base, ...shadows.soft },
   btnSecondary: { backgroundColor: ui.card, borderWidth: 1, borderColor: ui.border },
   btnText: { color: "#fff", fontWeight: "700", fontSize: 14 },
   btnSecondaryText: { color: brand.base, fontWeight: "700", fontSize: 14 },
-  preview: { padding: 16, paddingBottom: 40 },
+  preview: { padding: 16, paddingBottom: 130 },
   receiptPreview: {
     backgroundColor: ui.card,
     borderRadius: 14,

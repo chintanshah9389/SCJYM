@@ -34,11 +34,16 @@ function isExpoGo(): boolean {
 if (Platform.OS !== "web") {
   const Notifications = require("expo-notifications");
   Notifications.setNotificationHandler({
-    handleNotification: async () => ({
-      shouldShowAlert: true,
-      shouldPlaySound: true,
-      shouldSetBadge: true,
-    }),
+    handleNotification: async () => {
+      // Support both older and newer Expo notification handler fields.
+      return {
+        shouldShowAlert: true,
+        shouldShowBanner: true,
+        shouldShowList: true,
+        shouldPlaySound: true,
+        shouldSetBadge: true,
+      } as any;
+    },
   });
 }
 
@@ -96,7 +101,8 @@ export function usePushNotifications(userId?: string) {
     })();
 
     // Set up listeners for incoming notifications
-    setupNotificationListeners();
+    const cleanup = setupNotificationListeners();
+    return cleanup;
   }, [userId]);
 }
 

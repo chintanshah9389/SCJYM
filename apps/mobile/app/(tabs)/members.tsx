@@ -32,11 +32,12 @@ export default function MembersScreen() {
   const [roleFilters, setRoleFilters] = useState<string[]>([]);
   const [statusFilters, setStatusFilters] = useState<string[]>([]);
   const [exporting, setExporting] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   const ROLES = user?.role === "SUPER_ADMIN" ? ["MEMBER", "ADMIN", "SUPER_ADMIN"] : ["MEMBER", "ADMIN"];
   const STATUSES = ["PENDING_APPROVAL", "APPROVED", "REJECTED", "SUSPENDED"];
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, refetch } = useQuery({
     queryKey: ["members", search, page, roleFilters.join(","), statusFilters.join(",")],
     enabled: !!user,
     queryFn: () => {
@@ -57,6 +58,15 @@ export default function MembersScreen() {
     });
   }, [members, roleFilters, statusFilters]);
   const totalPages = data?.totalPages ?? 1;
+
+  async function handleRefresh() {
+    setRefreshing(true);
+    try {
+      await refetch();
+    } finally {
+      setRefreshing(false);
+    }
+  }
 
   async function handleExport(fmt: "csv" | "xlsx") {
     setExporting(true);
@@ -215,6 +225,8 @@ export default function MembersScreen() {
         <FlatList
           data={displayedMembers}
           keyExtractor={(item) => item.id}
+          refreshing={refreshing}
+          onRefresh={handleRefresh}
           renderItem={({ item }) => (
             <View style={styles.card}>
               <Text style={styles.name}>{item.fullName}</Text>

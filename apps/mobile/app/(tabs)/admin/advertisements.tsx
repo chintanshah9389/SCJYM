@@ -2,7 +2,7 @@
  * Admin Advertisements — CRUD for the home carousel ads.
  * File: apps/mobile/app/admin/advertisements.tsx
  */
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -23,13 +23,15 @@ import { api } from "@/lib/api";
 import { brand, ui, shadows } from "@/lib/theme";
 
 const MEDIA_TYPES = ["IMAGE", "VIDEO", "YOUTUBE"];
-const LINK_TYPES = ["NONE", "SCREEN_ROUTE", "WEB_URL"];
+const LINK_TYPES = ["NONE", "POST_PAGE", "SCREEN_ROUTE", "WEB_URL"];
 const BADGE_PRESETS = ["", "NEW", "SALE", "LIVE", "HOT", "FEATURED"];
 
 interface Ad {
   id: string;
   title: string;
   subtitle: string;
+  content: string;
+  ctaLabel: string;
   mediaUrl: string;
   mediaType: string;
   linkTarget: string;
@@ -40,9 +42,16 @@ interface Ad {
   badgeColor: string;
 }
 
+interface HomeContentForm {
+  sloganTitle: string;
+  sloganSubtitle: string;
+}
+
 const EMPTY_FORM: Omit<Ad, "id"> = {
   title: "",
   subtitle: "",
+  content: "",
+  ctaLabel: "Read more",
   mediaUrl: "",
   mediaType: "IMAGE",
   linkTarget: "",
@@ -58,13 +67,32 @@ export default function AdvertisementsScreen() {
   const [modalVisible, setModalVisible] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState({ ...EMPTY_FORM });
+  const [homeContent, setHomeContent] = useState<HomeContentForm>({
+    sloganTitle: "",
+    sloganSubtitle: "",
+  });
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [savingSlogan, setSavingSlogan] = useState(false);
 
   const { data: ads = [], isLoading } = useQuery<Ad[]>({
     queryKey: ["admin-ads"],
     queryFn: () => api.get("/admin/ads").then((r) => r.data.data ?? []),
   });
+
+  const { data: fetchedHomeContent } = useQuery<HomeContentForm>({
+    queryKey: ["admin-home-content"],
+    queryFn: () => api.get("/admin/ads/home-content").then((r) => r.data.data),
+  });
+
+  useEffect(() => {
+    if (fetchedHomeContent) {
+      setHomeContent({
+        sloganTitle: fetchedHomeContent.sloganTitle ?? "",
+        sloganSubtitle: fetchedHomeContent.sloganSubtitle ?? "",
+      });
+    }
+  }, [fetchedHomeContent]);
 
   function openCreate() {
     setEditingId(null);
@@ -77,6 +105,8 @@ export default function AdvertisementsScreen() {
     setForm({
       title: ad.title,
       subtitle: ad.subtitle ?? "",
+      content: ad.content ?? "",
+      ctaLabel: ad.ctaLabel ?? "Read more",
       mediaUrl: ad.mediaUrl,
       mediaType: ad.mediaType,
       linkTarget: ad.linkTarget ?? "",
@@ -146,6 +176,24 @@ export default function AdvertisementsScreen() {
     }
   }
 
+  async function handleSaveSlogan() {
+    if (!homeContent.sloganTitle.trim()) {
+      Alert.alert("Required", "Slogan title is required.");
+      return;
+    }
+
+    setSavingSlogan(true);
+    try {
+      await api.put("/admin/ads/home-content", homeContent);
+      qc.invalidateQueries({ queryKey: ["home-content"] });
+      qc.invalidateQueries({ queryKey: ["admin-home-content"] });
+    } catch (e: any) {
+      Alert.alert("Error", e?.response?.data?.error?.message ?? "Could not save slogan");
+    } finally {
+      setSavingSlogan(false);
+    }
+  }
+
   async function handleToggle(ad: Ad) {
     try {
       await api.patch(`/admin/ads/${ad.id}/toggle`);
@@ -184,6 +232,32 @@ export default function AdvertisementsScreen() {
         <ActivityIndicator color={brand.base} style={{ marginTop: 40 }} />
       ) : (
         <ScrollView contentContainerStyle={styles.list}>
+          <View style={styles.heroCard}>
+            <Text style={styles.heroCardTitle}>Daily Slogan</Text>
+            <Text style={styles.heroCardHint}>This updates the message shown above the home carousel.</Text>
+
+            <Label>Slogan Title *</Label>
+            <TextInput
+              style={styles.input}
+              value={homeContent.sloganTitle}
+              onChangeText={(v) => setHomeContent((current) => ({ ...current, sloganTitle: v }))}
+              placeholder="Built around your training journey"
+            />
+
+            <Label>Slogan Subtitle</Label>
+            <TextInput
+              style={[styles.input, styles.textarea]}
+              value={homeContent.sloganSubtitle}
+              onChangeText={(v) => setHomeContent((current) => ({ ...current, sloganSubtitle: v }))}
+              placeholder="Discover trending gear, member picks, and personalized recommendations."
+              multiline
+            />
+
+            <TouchableOpacity style={styles.inlineSaveBtn} onPress={handleSaveSlogan} disabled={savingSlogan}>
+              {savingSlogan ? <ActivityIndicator color="#fff" /> : <Text style={styles.inlineSaveBtnText}>Save Slogan</Text>}
+            </TouchableOpacity>
+          </View>
+
           {ads.length === 0 && (
             <Text style={styles.empty}>No advertisements yet. Tap "+ New Ad" to create one.</Text>
           )}
@@ -210,7 +284,11 @@ export default function AdvertisementsScreen() {
                 {!!ad.subtitle && (
                   <Text style={styles.cardSubtitle} numberOfLines={1}>{ad.subtitle}</Text>
                 )}
+                {!!ad.content && (
+                  <Text style={styles.cardExcerpt} numberOfLines={2}>{ad.content}</Text>
+                )}
                 <Text style={styles.cardMeta}>{ad.mediaType} · Order {ad.sortOrder}</Text>
+                <Text style={styles.cardMeta}>Tap: {ad.linkType || "NONE"}</Text>
                 {!!ad.linkTarget && (
                   <Text style={styles.cardLink} numberOfLines={1}>🔗 {ad.linkTarget}</Text>
                 )}
@@ -257,6 +335,16 @@ export default function AdvertisementsScreen() {
             <Label>Subtitle</Label>
             <TextInput style={styles.input} value={form.subtitle} onChangeText={(v) => setForm((f) => ({ ...f, subtitle: v }))} placeholder="Short description" />
 
+            <Label>Post Content</Label>
+            <TextInput
+              style={[styles.input, styles.textarea]}
+              value={form.content}
+              onChangeText={(v) => setForm((f) => ({ ...f, content: v }))}
+              placeholder="Full post content shown after the user taps the carousel item"
+              multiline
+              textAlignVertical="top"
+            />
+
             <Label>Media URL *</Label>
             <View style={styles.mediaInputRow}>
               <TextInput style={[styles.input, styles.mediaInputField]} value={form.mediaUrl} onChangeText={(v) => setForm((f) => ({ ...f, mediaUrl: v }))} placeholder="https://..." autoCapitalize="none" />
@@ -284,7 +372,19 @@ export default function AdvertisementsScreen() {
               ))}
             </View>
 
-            {form.linkType !== "NONE" && (
+            {form.linkType === "POST_PAGE" && (
+              <>
+                <Label>Post CTA Label</Label>
+                <TextInput
+                  style={styles.input}
+                  value={form.ctaLabel}
+                  onChangeText={(v) => setForm((f) => ({ ...f, ctaLabel: v }))}
+                  placeholder="Read more"
+                />
+              </>
+            )}
+
+            {form.linkType !== "NONE" && form.linkType !== "POST_PAGE" && (
               <>
                 <Label>Link Target</Label>
                 <TextInput style={styles.input} value={form.linkTarget} onChangeText={(v) => setForm((f) => ({ ...f, linkTarget: v }))} placeholder="e.g. /(tabs)/products or https://..." autoCapitalize="none" />
@@ -330,6 +430,18 @@ const styles = StyleSheet.create({
   addBtnText: { color: "#fff", fontWeight: "600", fontSize: 14 },
   list: { padding: 16, gap: 12 },
   empty: { color: ui.textMuted, textAlign: "center", marginTop: 40, fontSize: 14 },
+  heroCard: {
+    backgroundColor: ui.card,
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: ui.border,
+    ...shadows.card,
+  },
+  heroCardTitle: { fontSize: 17, fontWeight: "800", color: ui.text },
+  heroCardHint: { marginTop: 4, marginBottom: 8, color: ui.textMuted, fontSize: 13, lineHeight: 18 },
+  inlineSaveBtn: { marginTop: 14, alignSelf: "flex-start", backgroundColor: brand.base, borderRadius: 999, paddingHorizontal: 16, paddingVertical: 10 },
+  inlineSaveBtnText: { color: "#fff", fontWeight: "700", fontSize: 13 },
   card: { backgroundColor: ui.card, borderRadius: 14, overflow: "hidden", flexDirection: "row", gap: 12, padding: 12, borderWidth: 1, borderColor: ui.border, ...shadows.card },
   cardInactive: { opacity: 0.55 },
   thumb: { width: 80, height: 80, borderRadius: 8, backgroundColor: "#eef2ff" },
@@ -341,6 +453,7 @@ const styles = StyleSheet.create({
   badge: { borderRadius: 5, paddingHorizontal: 6, paddingVertical: 2 },
   badgeText: { color: "#fff", fontSize: 10, fontWeight: "700" },
   cardSubtitle: { fontSize: 13, color: ui.textMuted, marginBottom: 2 },
+  cardExcerpt: { fontSize: 12, lineHeight: 18, color: ui.text, marginBottom: 4 },
   cardMeta: { fontSize: 11, color: "#94a3b8", marginBottom: 2 },
   cardLink: { fontSize: 11, color: brand.base, marginBottom: 6 },
   cardActions: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 6 },
@@ -359,6 +472,7 @@ const styles = StyleSheet.create({
   modalBody: { padding: 20, gap: 4, paddingBottom: 40 },
   label: { fontSize: 13, fontWeight: "600", color: "#334155", marginTop: 12, marginBottom: 4 },
   input: { borderWidth: 1.5, borderColor: ui.border, borderRadius: 10, padding: 11, fontSize: 14, color: ui.text, backgroundColor: "#f8faff" },
+  textarea: { minHeight: 104 },
   chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 4 },
   chip: { borderWidth: 1.5, borderColor: ui.border, borderRadius: 20, paddingHorizontal: 14, paddingVertical: 6, backgroundColor: ui.card },
   chipActive: { borderColor: brand.base, backgroundColor: "#eff6ff" },

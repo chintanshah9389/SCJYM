@@ -49,6 +49,7 @@ const ADMIN_LINKS: NavLink[] = [
   { label: "Admin Hub", icon: "🛡️", href: "/admin/index", adminOnly: true },
   { label: "User Approvals", icon: "👤", href: "/admin/user-approvals", adminOnly: true },
   { label: "Product Approvals", icon: "📦", href: "/admin/product-approvals", adminOnly: true },
+  { label: "Posts", icon: "📝", href: "/admin/posts", adminOnly: true },
   { label: "Advertisements", icon: "📢", href: "/admin/advertisements", adminOnly: true },
   { label: "Menu Manager", icon: "📋", href: "/admin/menu-manager", adminOnly: true },
   { label: "Notification Push", icon: "🔔", href: "/admin/push-notifications", adminOnly: true },

@@ -18,8 +18,9 @@ export default function ProductsScreen() {
   const router = useRouter();
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
+  const [refreshing, setRefreshing] = useState(false);
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, refetch } = useQuery({
     queryKey: ["products", search, page],
     queryFn: () =>
       api
@@ -29,6 +30,15 @@ export default function ProductsScreen() {
 
   const products = data?.items ?? [];
   const totalPages = data?.totalPages ?? 1;
+
+  async function handleRefresh() {
+    setRefreshing(true);
+    try {
+      await refetch();
+    } finally {
+      setRefreshing(false);
+    }
+  }
 
   return (
     <View style={styles.container}>
@@ -46,6 +56,8 @@ export default function ProductsScreen() {
         <FlatList
           data={products}
           keyExtractor={(item) => item.id}
+          refreshing={refreshing}
+          onRefresh={handleRefresh}
           renderItem={({ item }) => (
             <TouchableOpacity
               style={styles.card}

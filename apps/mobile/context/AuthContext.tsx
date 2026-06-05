@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { Platform } from "react-native";
 import { api } from "../lib/api";
+import { useQueryClient } from "@tanstack/react-query";
 import { usePushNotifications } from "../hooks/usePushNotifications";
 import { useWebPushNotifications } from "../hooks/useWebPushNotifications";
 
@@ -41,6 +42,7 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const queryClient = useQueryClient();
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -72,6 +74,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const { data } = await api.post("/auth/login", { email, password });
     await store.setItem("accessToken", data.data.accessToken);
     await store.setItem("refreshToken", data.data.refreshToken);
+    // Drop stale cached data from prior sessions before setting current user.
+    queryClient.clear();
     setUser(data.data.user);
   }
 
@@ -82,6 +86,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
     await store.deleteItem("accessToken");
     await store.deleteItem("refreshToken");
+    queryClient.clear();
     setUser(null);
   }
 

@@ -73,7 +73,7 @@ export default function NotifCarousel() {
   const [dismissedReady, setDismissedReady] = useState(false);
 
   const { data: notifications = [] } = useQuery({
-    queryKey: ["notif-carousel"],
+    queryKey: ["notif-carousel", user?.id],
     queryFn: () =>
       api.get("/notifications?limit=10").then((r) => r.data.data?.items ?? r.data.data ?? []),
     enabled: !!user,

@@ -1,20 +1,20 @@
-import React from "react";
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Image } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
+import React, { useState } from "react";
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Image, RefreshControl } from "react-native";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { api } from "../../lib/api";
 import { useAuth } from "../../context/AuthContext";
 import AdCarousel from "../../components/AdCarousel";
+import HomeSlogan from "../../components/HomeSlogan";
 import NotifCarousel from "../../components/NotifCarousel";
 import { brand, ui, shadows } from "../../lib/theme";
-import BrandMark from "../../components/BrandMark";
 
 export default function HomeScreen() {
   const router = useRouter();
   const { user } = useAuth();
+  const [refreshing, setRefreshing] = useState(false);
 
-  const { data: bestSellers } = useQuery({
+  const { data: bestSellers, refetch: refetchBestSellers } = useQuery({
     queryKey: ["best-sellers"],
     queryFn: () =>
       api.get("/products/best-sellers?window=weekly&region=GLOBAL").then(
@@ -22,7 +22,7 @@ export default function HomeScreen() {
       ),
   });
 
-  const { data: personalizedData } = useQuery({
+  const { data: personalizedData, refetch: refetchPersonalized } = useQuery({
     queryKey: ["best-sellers-personalized"],
     queryFn: () =>
       api.get("/products/best-sellers/personalized?limit=10").then(
@@ -34,12 +34,12 @@ export default function HomeScreen() {
   const personalized: any[] = personalizedData?.items ?? [];
   const isPersonalized: boolean = personalizedData?.personalized ?? false;
 
-  const { data: approvedProducts } = useQuery({
+  const { data: approvedProducts, refetch: refetchApprovedProducts } = useQuery({
     queryKey: ["products-home-fallback"],
     queryFn: () => api.get("/products?limit=5").then((r) => r.data.data?.items ?? []),
   });
 
-  const { data: menuItems } = useQuery({
+  const { data: menuItems, refetch: refetchMenu } = useQuery({
     queryKey: ["menu"],
     queryFn: () => api.get("/menu").then((r) => r.data.data ?? []),
   });
@@ -87,22 +87,27 @@ export default function HomeScreen() {
     );
   }
 
+  async function handleRefresh() {
+    setRefreshing(true);
+    try {
+      await Promise.all([
+        refetchBestSellers(),
+        refetchPersonalized(),
+        refetchApprovedProducts(),
+        refetchMenu(),
+      ]);
+    } finally {
+      setRefreshing(false);
+    }
+  }
+
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <LinearGradient
-        colors={brand.gradients.hero}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.heroWrap}
-      >
-        <View style={styles.heroFoldA} />
-        <View style={styles.heroFoldB} />
-        <View style={styles.heroFoldAccent} />
-        <BrandMark size={54} light style={styles.heroMark} />
-        <Text style={styles.heroEyebrow}>SCJYGM</Text>
-        <Text style={styles.heroTitle}>Built around your training journey</Text>
-        <Text style={styles.heroSub}>Discover trending gear, member picks, and personalized recommendations.</Text>
-      </LinearGradient>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.content}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={brand.base} />}
+    >
+      <HomeSlogan />
 
       {/* ── Ad Carousel ────────────────────────────────────── */}
       <AdCarousel />
@@ -160,73 +165,6 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: ui.pageBg },
   content: { paddingTop: 12, paddingHorizontal: 0, paddingBottom: 94 },
-  heroWrap: {
-    marginHorizontal: 16,
-    marginBottom: 14,
-    borderRadius: 18,
-    backgroundColor: "#0f172a",
-    paddingVertical: 18,
-    paddingHorizontal: 16,
-    overflow: "hidden",
-    position: "relative",
-    ...shadows.card,
-  },
-  heroFoldA: {
-    position: "absolute",
-    width: 110,
-    height: 110,
-    borderRadius: 16,
-    backgroundColor: "rgba(255,255,255,0.08)",
-    right: 28,
-    top: -22,
-    transform: [{ rotate: "30deg" }],
-  },
-  heroFoldB: {
-    position: "absolute",
-    width: 84,
-    height: 84,
-    borderRadius: 14,
-    backgroundColor: "rgba(255,255,255,0.12)",
-    right: 70,
-    top: 20,
-    transform: [{ rotate: "-22deg" }],
-  },
-  heroFoldAccent: {
-    position: "absolute",
-    width: 30,
-    height: 30,
-    borderRadius: 8,
-    backgroundColor: "rgba(227,27,63,0.9)",
-    right: 38,
-    top: 24,
-    transform: [{ rotate: "45deg" }],
-  },
-  heroMark: {
-    position: "absolute",
-    right: 14,
-    bottom: 12,
-    opacity: 0.9,
-  },
-  heroEyebrow: {
-    color: "rgba(255,255,255,0.78)",
-    fontSize: 11,
-    letterSpacing: 1,
-    fontWeight: "700",
-    textTransform: "uppercase",
-  },
-  heroTitle: {
-    marginTop: 6,
-    fontSize: 21,
-    lineHeight: 26,
-    color: "#fff",
-    fontWeight: "800",
-  },
-  heroSub: {
-    marginTop: 7,
-    color: "rgba(255,255,255,0.9)",
-    fontSize: 13,
-    lineHeight: 18,
-  },
   section: { marginBottom: 24, paddingHorizontal: 16 },
   sectionTitle: { fontSize: 19, fontWeight: "800", marginBottom: 12, color: ui.text },
   menuChip: {

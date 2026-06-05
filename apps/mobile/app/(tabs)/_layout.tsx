@@ -167,6 +167,14 @@ export default function TabsLayout() {
           options={{ href: null, title: "Advertisements", headerLeft: hamburger }}
         />
         <Tabs.Screen
+          name="admin/posts"
+          options={{ href: null, title: "Posts", headerLeft: hamburger }}
+        />
+        <Tabs.Screen
+          name="posts/[id]"
+          options={{ href: null, title: "Post", headerLeft: hamburger }}
+        />
+        <Tabs.Screen
           name="admin/receipt-maker"
           options={{ href: null, title: "Receipt Maker", headerLeft: hamburger }}
         />
