@@ -185,23 +185,154 @@ ${"═".repeat(40)}
 
     try {
       const sharedText = receiptContent;
+      const logoUri = Image.resolveAssetSource(require("../../../assets/icon.png"))?.uri ?? "";
+      const now = new Date();
+      const dateStr = now.toLocaleDateString("en-IN");
+      const timeStr = now.toLocaleTimeString("en-IN");
+      const messageForPdf = buildReceiptMessage(
+        bodyText || "Message will appear here.",
+        previewUserName
+      );
+      const safeMessageHtml = escapeHtml(messageForPdf).replace(/\n/g, "<br/>");
       const html = `
         <html>
           <head>
             <meta charset="utf-8" />
+            <meta name="viewport" content="width=device-width, initial-scale=1" />
             <style>
-              body { font-family: Arial, sans-serif; padding: 20px; color: #0f172a; }
-              .card { border: 1px solid #dbeafe; border-radius: 12px; padding: 16px; }
-              .title { color: #1d4ed8; font-size: 20px; font-weight: bold; margin-bottom: 8px; }
-              .sub { color: #64748b; font-size: 12px; margin-bottom: 12px; }
-              pre { white-space: pre-wrap; line-height: 1.5; font-size: 12px; font-family: Courier New, monospace; }
+              * {
+                box-sizing: border-box;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+              }
+              body {
+                margin: 0;
+                padding: 24px;
+                background: #f5f7fb;
+                color: #0f172a;
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+              }
+              .card {
+                width: 100%;
+                max-width: 760px;
+                margin: 0 auto;
+                background: #ffffff;
+                border: 1px solid #dbe5f0;
+                border-radius: 20px;
+                padding: 24px;
+              }
+              .head {
+                display: flex;
+                align-items: center;
+                gap: 14px;
+                padding-bottom: 16px;
+                margin-bottom: 16px;
+                border-bottom: 1px solid #e2e8f0;
+              }
+              .logo {
+                width: 56px;
+                height: 56px;
+                border-radius: 12px;
+                border: 1px solid #dbe5f0;
+                object-fit: contain;
+                background: #ffffff;
+              }
+              .brandTitle {
+                margin: 0;
+                font-size: 28px;
+                line-height: 1.1;
+                font-weight: 800;
+                color: #1d4ed8;
+                letter-spacing: 0.3px;
+              }
+              .brandSub {
+                margin: 4px 0 0;
+                font-size: 13px;
+                color: #64748b;
+                font-weight: 600;
+              }
+              .meta {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 10px;
+                margin-bottom: 16px;
+              }
+              .metaBox {
+                border: 1px solid #dbe5f0;
+                border-radius: 12px;
+                padding: 10px 12px;
+                background: #f8fafc;
+              }
+              .metaLabel {
+                margin: 0;
+                font-size: 11px;
+                color: #64748b;
+                font-weight: 700;
+                text-transform: uppercase;
+              }
+              .metaValue {
+                margin: 4px 0 0;
+                font-size: 15px;
+                color: #0f172a;
+                font-weight: 700;
+              }
+              .headline {
+                margin: 10px 0 12px;
+                padding: 10px 12px;
+                border-radius: 12px;
+                background: #eef2ff;
+                color: #1e3a8a;
+                font-size: 18px;
+                font-weight: 800;
+              }
+              .msg {
+                border: 1px solid #dbe5f0;
+                border-radius: 12px;
+                padding: 14px;
+                background: #ffffff;
+                font-size: 14px;
+                line-height: 1.7;
+                color: #111827;
+                white-space: normal;
+              }
+              .raw {
+                margin-top: 16px;
+                border-radius: 12px;
+                border: 1px dashed #cbd5e1;
+                background: #f8fafc;
+                padding: 12px;
+                font-family: "Courier New", monospace;
+                font-size: 12px;
+                line-height: 1.45;
+                white-space: pre-wrap;
+              }
             </style>
           </head>
           <body>
             <div class="card">
-              <div class="title">SCJYM Receipt</div>
-              <div class="sub">Generated for sharing via WhatsApp</div>
-              <pre>${escapeHtml(sharedText)}</pre>
+              <div class="head">
+                ${logoUri ? `<img class="logo" src="${logoUri}" alt="SCJYM logo" />` : ""}
+                <div>
+                  <p class="brandTitle">SCJYM</p>
+                  <p class="brandSub">Official Receipt</p>
+                </div>
+              </div>
+
+              <div class="meta">
+                <div class="metaBox">
+                  <p class="metaLabel">Receipt Number</p>
+                  <p class="metaValue">${escapeHtml(receiptNum)}</p>
+                </div>
+                <div class="metaBox">
+                  <p class="metaLabel">Generated</p>
+                  <p class="metaValue">${escapeHtml(dateStr)} ${escapeHtml(timeStr)}</p>
+                </div>
+              </div>
+
+              <div class="headline">${escapeHtml(header || "Receipt Confirmation")}</div>
+              <div class="msg">${safeMessageHtml}</div>
+
+              <div class="raw">${escapeHtml(sharedText)}</div>
             </div>
           </body>
         </html>
