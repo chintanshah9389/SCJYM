@@ -3,6 +3,12 @@
     "version": ">= 5.0.0"
   },
   "build": {
+    "preview-fast": {
+      "android": {
+        "buildType": "apk",
+        "gradleCommand": ":app:assembleDebug"
+      }
+    },
     "preview": {
       "android": {
         "buildType": "apk"
