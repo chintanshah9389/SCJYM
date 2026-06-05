@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from "react-native";
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Image } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
@@ -53,6 +53,7 @@ export default function HomeScreen() {
 
   function ProductCard({ item, rank }: { item: any; rank?: number }) {
     const p = item.product ?? item;
+    const imageUrl = Array.isArray(p.images) && p.images.length > 0 ? p.images[0] : null;
     return (
       <TouchableOpacity
         style={styles.productCard}
@@ -60,19 +61,28 @@ export default function HomeScreen() {
           router.push({ pathname: "/(tabs)/product/[id]" as any, params: { id: p.id } })
         }
       >
-        {rank !== undefined && (
-          <Text style={styles.rank}>#{rank}</Text>
-        )}
-        {item.isExploration && (
-          <View style={styles.exploreBadge}>
-            <Text style={styles.exploreBadgeText}>Discover</Text>
+        {imageUrl ? (
+          <Image source={{ uri: imageUrl }} style={styles.productImage} resizeMode="cover" />
+        ) : (
+          <View style={styles.productImageFallback}>
+            <Text style={styles.productImageFallbackText}>No Image</Text>
           </View>
         )}
-        <Text style={styles.productTitle} numberOfLines={2}>{p.title}</Text>
-        <Text style={styles.productPrice}>₹{p.price}</Text>
-        <Text style={styles.productRating}>
-          ★ {p.avgRating?.toFixed(1) ?? "—"} ({p.ratingCount ?? 0})
-        </Text>
+        <View style={styles.productMeta}>
+          <View style={styles.topRow}>
+            {rank !== undefined && <Text style={styles.rank}>#{rank}</Text>}
+            {item.isExploration && (
+              <View style={styles.exploreBadge}>
+                <Text style={styles.exploreBadgeText}>Discover</Text>
+              </View>
+            )}
+          </View>
+          <Text style={styles.productTitle} numberOfLines={2}>{p.title}</Text>
+          <Text style={styles.productPrice}>₹{p.price}</Text>
+          <Text style={styles.productRating}>
+            ★ {p.avgRating?.toFixed(1) ?? "—"} ({p.ratingCount ?? 0})
+          </Text>
+        </View>
       </TouchableOpacity>
     );
   }
@@ -229,20 +239,52 @@ const styles = StyleSheet.create({
   },
   menuChipText: { color: "#fff", fontSize: 13, fontWeight: "700", letterSpacing: 0.2 },
   productCard: {
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: ui.card,
     borderRadius: 16,
-    padding: 16,
+    padding: 10,
     marginBottom: 12,
     borderWidth: 1,
     borderColor: ui.border,
     ...shadows.card,
+  },
+  productMeta: {
+    flex: 1,
+    paddingLeft: 10,
+    minHeight: 88,
+    justifyContent: "center",
+  },
+  topRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 4,
+  },
+  productImage: {
+    width: 88,
+    height: 88,
+    borderRadius: 10,
+    backgroundColor: "#eef5ff",
+  },
+  productImageFallback: {
+    width: 88,
+    height: 88,
+    borderRadius: 10,
+    backgroundColor: "#eef5ff",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  productImageFallbackText: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: ui.textMuted,
   },
   hCard: { width: 180, marginRight: 12 },
   rank: {
     fontSize: 11,
     color: ui.textMuted,
     fontWeight: "700",
-    marginBottom: 4,
   },
   exploreBadge: {
     alignSelf: "flex-start",
@@ -250,7 +292,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     paddingHorizontal: 6,
     paddingVertical: 2,
-    marginBottom: 4,
+    marginBottom: 0,
   },
   exploreBadgeText: { fontSize: 10, color: brand.deep, fontWeight: "700" },
   productTitle: { fontSize: 15, fontWeight: "700", color: ui.text, marginBottom: 4 },
