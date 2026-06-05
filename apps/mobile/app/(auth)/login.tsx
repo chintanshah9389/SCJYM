@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   StyleSheet,
   ActivityIndicator,
   KeyboardAvoidingView,
+  Keyboard,
   Platform,
   ScrollView,
   StatusBar,
@@ -17,7 +18,6 @@ import { useRouter } from "expo-router";
 import { useAuth } from "../../context/AuthContext";
 import { useToast } from "../../context/ToastContext";
 import { brand, ui, shadows } from "../../lib/theme";
-import BrandMark from "../../components/BrandMark";
 
 export default function LoginScreen() {
   const { login } = useAuth();
@@ -28,6 +28,16 @@ export default function LoginScreen() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
+
+  useEffect(() => {
+    const showSub = Keyboard.addListener("keyboardDidShow", () => setIsKeyboardOpen(true));
+    const hideSub = Keyboard.addListener("keyboardDidHide", () => setIsKeyboardOpen(false));
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
 
   function validateForm() {
     const nextErrors: Record<string, string> = {};
@@ -72,27 +82,27 @@ export default function LoginScreen() {
         colors={brand.gradients.hero}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
-        style={styles.hero}
+        style={[styles.hero, isKeyboardOpen && styles.heroCompact]}
       >
         <View style={styles.heroFoldLeft} />
         <View style={styles.heroFoldRight} />
         <View style={styles.heroFoldTop} />
-        <Image source={require("../../assets/icon.png")} style={styles.logoImage} resizeMode="contain" />
-        <BrandMark size={110} light style={styles.logoMark} />
+        <Image source={require("../../assets/icon.png")} style={[styles.logoImage, isKeyboardOpen && styles.logoImageCompact]} resizeMode="contain" />
         <Text style={styles.appName}>SCJYGM</Text>
-        <Text style={styles.tagline}>Secure flow. Smart rewards. Fast trust.</Text>
+        <Text style={styles.tagline}>Connecting youth</Text>
       </LinearGradient>
 
       {/* Card */}
       <KeyboardAvoidingView
-        style={styles.cardWrapper}
+        style={[styles.cardWrapper, isKeyboardOpen && styles.cardWrapperKeyboardOpen]}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
-        keyboardVerticalOffset={Platform.OS === "android" ? (StatusBar.currentHeight ?? 0) : 0}
+        keyboardVerticalOffset={Platform.OS === "android" ? (StatusBar.currentHeight ?? 0) + 18 : 0}
       >
         <ScrollView
-          contentContainerStyle={styles.card}
+          contentContainerStyle={[styles.card, isKeyboardOpen && styles.cardKeyboardOpen]}
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="on-drag"
+          showsVerticalScrollIndicator={false}
         >
           <Text style={styles.cardTitle}>Welcome back</Text>
           <Text style={styles.cardSubtitle}>Sign in to continue</Text>
@@ -205,6 +215,10 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     position: "relative",
   },
+  heroCompact: {
+    paddingTop: 22,
+    paddingBottom: 10,
+  },
   heroFoldLeft: {
     position: "absolute",
     width: 130,
@@ -235,14 +249,15 @@ const styles = StyleSheet.create({
     right: 72,
     transform: [{ rotate: "45deg" }],
   },
-  logoMark: {
-    marginBottom: 10,
-    marginTop: -2,
-  },
   logoImage: {
     width: 78,
     height: 78,
     marginBottom: 10,
+  },
+  logoImageCompact: {
+    width: 58,
+    height: 58,
+    marginBottom: 8,
   },
   appName: {
     fontSize: 36,
@@ -253,7 +268,13 @@ const styles = StyleSheet.create({
   tagline: { fontSize: 13, color: "rgba(255,255,255,0.84)", marginTop: 4, letterSpacing: 0.45 },
 
   /* ── Card ── */
-  cardWrapper: { flex: 1 },
+  cardWrapper: {
+    flex: 1,
+    marginTop: -22,
+  },
+  cardWrapperKeyboardOpen: {
+    marginTop: -42,
+  },
   card: {
     backgroundColor: ui.card,
     borderTopLeftRadius: 30,
@@ -264,6 +285,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: ui.border,
     ...shadows.card,
+  },
+  cardKeyboardOpen: {
+    paddingTop: 18,
+    paddingBottom: 22,
   },
   cardTitle: { fontSize: 25, fontWeight: "800", color: ui.text, marginBottom: 2 },
   cardSubtitle: { fontSize: 14, color: ui.textMuted, marginBottom: 24 },

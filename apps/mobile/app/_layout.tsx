@@ -8,7 +8,6 @@ import { ToastProvider } from "../context/ToastContext";
 import { ThemeProvider, useAppTheme } from "../context/ThemeContext";
 import { useRouter, useSegments } from "expo-router";
 import { toastEmitter } from "../lib/toastEmitter";
-import BrandMark from "../components/BrandMark";
 
 const queryClient = new QueryClient();
 
@@ -226,10 +225,9 @@ function SplashScreen({
       <Animated.View style={[splash.ring, { opacity: ringOpacity, transform: [{ scale: ringScale }, { rotate: spin }] }]} />
       <Animated.View style={[splash.circle, { transform: [{ scale }, { translateY: floatY }], opacity }]}>
         <Image source={require("../assets/icon.png")} style={splash.logoImage} resizeMode="contain" />
-        <BrandMark size={88} light />
       </Animated.View>
       <Animated.Text style={[splash.name, { opacity: textOpacity, transform: [{ translateY: textY }] }]}>SCJYGM</Animated.Text>
-      <Animated.Text style={[splash.tagline, { opacity: textOpacity, transform: [{ translateY: textY }] }]}>Origami-fast finance with trusted flow</Animated.Text>
+      <Animated.Text style={[splash.tagline, { opacity: textOpacity, transform: [{ translateY: textY }] }]}>Connecting youth</Animated.Text>
     </Animated.View>
   );
 }
