@@ -105,6 +105,7 @@ FRESH_PRODUCTS: list[dict[str, Any]] = [
 
 
 DUMMY_CODE_SET = {f"dummy-p-{i}" for i in range(1, 50)}
+FRESH_CODE_SET = {f"fresh-p-{i}" for i in range(1, 50)}
 
 
 async def _list_products(client: httpx.AsyncClient, headers: dict[str, str]) -> list[dict[str, Any]]:
@@ -129,10 +130,16 @@ async def _list_products(client: httpx.AsyncClient, headers: dict[str, str]) -> 
     return all_items
 
 
-def _is_dummy(item: dict[str, Any]) -> bool:
+def _is_reset_target(item: dict[str, Any]) -> bool:
     title = str(item.get("title") or "")
     product_code = str(item.get("productCode") or "")
-    return title.startswith("Demo Home Product - ") or product_code in DUMMY_CODE_SET
+    fresh_titles = {p["title"] for p in FRESH_PRODUCTS}
+    return (
+        title.startswith("Demo Home Product - ")
+        or product_code in DUMMY_CODE_SET
+        or product_code in FRESH_CODE_SET
+        or title in fresh_titles
+    )
 
 
 async def _delete_products(client: httpx.AsyncClient, headers: dict[str, str], ids: list[str]) -> int:
@@ -212,7 +219,7 @@ async def main() -> None:
         }
 
         items = await _list_products(client, headers)
-        dummy_ids = [str(i.get("id")) for i in items if i.get("id") and _is_dummy(i)]
+        dummy_ids = [str(i.get("id")) for i in items if i.get("id") and _is_reset_target(i)]
 
         deleted = await _delete_products(client, headers, dummy_ids)
 
